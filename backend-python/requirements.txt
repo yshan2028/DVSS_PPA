@@ -9,7 +9,7 @@ sqlalchemy==2.0.23
 psycopg2-binary==2.9.9
 pymysql==1.1.0
 motor==3.3.2
-pymongo==4.6.3
+pymongo==4.13.2
 
 # Redis
 redis[hiredis]==5.0.1
@@ -17,13 +17,13 @@ redis[hiredis]==5.0.1
 # 认证
 python-jose[cryptography]==3.4.0
 passlib[bcrypt]==1.7.4
-python-multipart==0.0.19
+python-multipart==0.0.20
 PyJWT==2.8.0
 bcrypt==4.0.1
 
 # HTTP客户端
 httpx==0.25.2
-aiohttp==3.10.11
+aiohttp==3.12.13
 
 # 数据处理
 pandas==2.0.3
@@ -54,7 +54,7 @@ loguru==0.7.2
 # 密码学和零知识证明
 # secretsharing==0.2.6  # 替换为兼容Python 3的库
 shamirssecret==1.0.0
-pycryptodome==3.19.0
+pycryptodome==3.19.1
 
 # 配置文件处理
 PyYAML==6.0.1
@@ -67,7 +67,7 @@ jsonschema==4.20.0
 python-dateutil==2.8.2
 
 # 机器学习 (用于敏感度分析)
-scikit-learn==1.5.0
+scikit-learn==1.6.1
 
 # 任务队列
 celery==5.3.4
@@ -84,6 +84,6 @@ py_ecc==6.0.0
 merklelib==1.0
 
 # 开发工具
-black==24.3.0
+black==25.1.0
 isort==5.12.0
 asyncmy==0.2.1
