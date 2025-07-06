@@ -14,7 +14,7 @@ from ..schemas.log_schema import (
     AuditReportRequest, AuditReportResponse
 )
 from ..entity.operation_log import OperationLog
-from config.get_db import get_db_session
+from core.deps import get_db_session
 from exceptions.custom_exception import BusinessException
 import json
 import uuid

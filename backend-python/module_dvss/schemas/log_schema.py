@@ -115,7 +115,7 @@ class SystemLogResponse(SystemLogBase):
 class LogSearchRequest(BaseModel):
     """日志搜索请求"""
     keyword: Optional[str] = Field(None, description="关键词")
-    log_type: Optional[str] = Field(None, description="日志类型", regex="^(operation|system)$")
+    log_type: Optional[str] = Field(None, description="日志类型", pattern="^(operation|system)$")
     level: Optional[LogLevel] = Field(None, description="日志级别")
     operation_type: Optional[OperationType] = Field(None, description="操作类型")
     user_id: Optional[int] = Field(None, description="用户ID")
@@ -133,7 +133,7 @@ class LogStatsRequest(BaseModel):
     """日志统计请求"""
     start_date: datetime = Field(..., description="开始日期")
     end_date: datetime = Field(..., description="结束日期")
-    group_by: str = Field(default="day", description="分组方式", regex="^(hour|day|week|month)$")
+    group_by: str = Field(default="day", description="分组方式", pattern="^(hour|day|week|month)$")
     metrics: List[str] = Field(default=["count", "success_rate"], description="统计指标")
 
 
@@ -190,7 +190,7 @@ class AuditReportRequest(BaseModel):
     operation_types: Optional[List[OperationType]] = Field(None, description="操作类型列表")
     include_system_logs: bool = Field(default=False, description="是否包含系统日志")
     include_security_logs: bool = Field(default=True, description="是否包含安全日志")
-    format: str = Field(default="pdf", description="报告格式", regex="^(pdf|excel|csv)$")
+    format: str = Field(default="pdf", description="报告格式", pattern="^(pdf|excel|csv)$")
 
 
 class AuditReportResponse(BaseModel):
@@ -218,7 +218,7 @@ class LogExportRequest(BaseModel):
     """日志导出请求"""
     log_type: str = Field(..., description="日志类型")
     filters: Optional[LogSearchRequest] = Field(None, description="过滤条件")
-    format: str = Field(default="json", description="导出格式", regex="^(json|csv|excel)$")
+    format: str = Field(default="json", description="导出格式", pattern="^(json|csv|excel)$")
     compress: bool = Field(default=True, description="是否压缩")
     password_protect: bool = Field(default=False, description="是否密码保护")
 

@@ -1,4 +1,4 @@
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 from typing import Optional, List
 import os
 
@@ -87,10 +87,21 @@ class Settings(BaseSettings):
     CACHE_TTL: int = 300  # 5 minutes
     CACHE_MAX_SIZE: int = 1000
     
+    # Fabric配置
+    FABRIC_GATEWAY_URL: str = "http://localhost:8001/api/v1/fabric"
+    FABRIC_NETWORK_PATH: str = "../fabric"
+    FABRIC_CHANNEL_NAME: str = "mychannel"
+    FABRIC_CHAINCODE_NAME: str = "dvss-chaincode"
+    
+    # 密钥共享配置
+    SECRET_SHARING_THRESHOLD: int = 3
+    SECRET_SHARING_TOTAL: int = 5
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = True
+        extra = "ignore"  # 忽略额外字段
 
 
 # 创建全局设置实例
@@ -100,27 +111,3 @@ settings = Settings()
 def get_settings() -> Settings:
     """获取设置实例"""
     return settings
-    
-    # Fabric配置
-    FABRIC_GATEWAY_URL: str = "http://localhost:8001/api/v1/fabric"
-    
-    # 加密配置
-    ENCRYPTION_ALGORITHM: str = "AES-256-GCM"
-    SECRET_SHARING_THRESHOLD: int = 3
-    SECRET_SHARING_TOTAL: int = 5
-    
-    # 文件上传配置
-    MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MB
-    UPLOAD_DIR: str = "uploads"
-    
-    # 分页配置
-    DEFAULT_PAGE_SIZE: int = 20
-    MAX_PAGE_SIZE: int = 100
-    
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-
-
-# 全局设置实例
-settings = Settings()

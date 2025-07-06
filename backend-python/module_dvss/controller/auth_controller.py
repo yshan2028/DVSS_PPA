@@ -5,8 +5,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from config.get_db import get_db
-from core.deps import get_current_user
+from core.deps import get_db, get_current_user
 from module_dvss.service.auth_service import AuthService
 from module_dvss.schemas.user_schema import LoginRequest, LoginResponse, ChangePasswordRequest
 from module_dvss.schemas.common_schema import SuccessResponse

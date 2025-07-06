@@ -25,6 +25,11 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
+def get_db_session() -> Session:
+    """获取数据库会话对象（非生成器版本）"""
+    return SessionLocal()
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)

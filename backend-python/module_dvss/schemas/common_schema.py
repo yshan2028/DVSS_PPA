@@ -17,6 +17,14 @@ class CommonResponse(BaseModel, Generic[T]):
     success: bool = Field(..., description="是否成功")
 
 
+class SuccessResponse(BaseModel):
+    """成功响应模型"""
+    code: int = Field(200, description="响应码")
+    message: str = Field("操作成功", description="响应消息")
+    success: bool = Field(True, description="是否成功")
+    timestamp: datetime = Field(default_factory=datetime.now, description="响应时间")
+
+
 class PaginationInfo(BaseModel):
     """分页信息"""
     total: int = Field(..., description="总记录数")
@@ -50,7 +58,7 @@ class PaginationRequest(BaseModel):
 class SortRequest(BaseModel):
     """排序请求模型"""
     sort_field: Optional[str] = Field(None, description="排序字段")
-    sort_order: Optional[str] = Field("desc", regex="^(asc|desc)$", description="排序方向")
+    sort_order: Optional[str] = Field("desc", pattern="^(asc|desc)$", description="排序方向")
 
 
 class FilterRequest(BaseModel):
@@ -71,14 +79,14 @@ class StatusToggleRequest(BaseModel):
 
 class ImportRequest(BaseModel):
     """导入请求模型"""
-    file_type: str = Field(..., regex="^(csv|json|xlsx)$", description="文件类型")
+    file_type: str = Field(..., pattern="^(csv|json|xlsx)$", description="文件类型")
     data: List[dict] = Field(..., description="导入数据")
     validate_only: bool = Field(False, description="仅验证不导入")
 
 
 class ExportRequest(BaseModel):
     """导出请求模型"""
-    file_type: str = Field(..., regex="^(csv|json|xlsx)$", description="导出文件类型")
+    file_type: str = Field(..., pattern="^(csv|json|xlsx)$", description="导出文件类型")
     filters: Optional[dict] = Field(None, description="过滤条件")
     fields: Optional[List[str]] = Field(None, description="导出字段")
 

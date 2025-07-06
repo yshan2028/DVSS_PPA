@@ -10,9 +10,9 @@ import pandas as pd
 import json
 import asyncio
 
-from module_dvss.dao.order_dao import OrderDao
+from module_dvss.dao.order_dao import OrderDAO
 from module_dvss.dao.shard_dao import ShardDao
-from module_dvss.dao.user_dao import UserDao
+from module_dvss.dao.user_dao import UserDAO
 from module_dvss.dao.field_dao import FieldDao
 from module_dvss.dao.log_dao import LogDao
 from module_dvss.service.encryption_service import EncryptionService
@@ -38,9 +38,9 @@ class DVSSService:
     
     def __init__(self, db: Session):
         self.db = db
-        self.order_dao = OrderDao(db)
+        self.order_dao = OrderDAO(db)
         self.shard_dao = ShardDao(db)
-        self.user_dao = UserDao(db)
+        self.user_dao = UserDAO(db)
         self.field_dao = FieldDao(db)
         self.log_dao = LogDao(db)
         self.encryption_service = EncryptionService(db)

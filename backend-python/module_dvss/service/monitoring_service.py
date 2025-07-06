@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 import psutil
 import time
 
-from module_dvss.dao.user_dao import UserDao
+from module_dvss.dao.user_dao import UserDAO
 from module_dvss.dao.order_dao import OrderDao
 from module_dvss.dao.shard_dao import ShardDao
 from module_dvss.dao.log_dao import LogDao
@@ -22,7 +22,7 @@ class MonitoringService:
     
     def __init__(self, db: Session):
         self.db = db
-        self.user_dao = UserDao(db)
+        self.user_dao = UserDAO(db)
         self.order_dao = OrderDao(db)
         self.shard_dao = ShardDao(db)
         self.log_dao = LogDao(db)

@@ -5,8 +5,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException, status
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config.get_db import get_db
-from core.deps import get_current_user
+from core.deps import get_db, get_current_user
 from module_dvss.schemas.role_schema import (
     RoleCreate, 
     RoleUpdate, 

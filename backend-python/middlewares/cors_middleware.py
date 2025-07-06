@@ -3,7 +3,7 @@ CORS中间件配置
 CORS Middleware Configuration
 """
 from fastapi.middleware.cors import CORSMiddleware
-from core.config import settings
+from config.settings import settings
 
 
 def setup_cors(app):

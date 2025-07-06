@@ -86,7 +86,7 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
     logger.error(f"Unhandled Exception: {str(exc)}", exc_info=True)
     
     # 在生产环境中不暴露详细的错误信息
-    from core.config import settings
+    from config.settings import settings
     
     if settings.DEBUG:
         error_detail = {

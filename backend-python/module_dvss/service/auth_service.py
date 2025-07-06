@@ -10,7 +10,7 @@ from fastapi import HTTPException, status
 import jwt
 import bcrypt
 
-from module_dvss.dao.user_dao import UserDao
+from module_dvss.dao.user_dao import UserDAO
 from module_dvss.schemas.user_schema import LoginRequest, LoginResponse, UserResponse
 from module_dvss.entity.user import User
 from exceptions.custom_exception import AuthenticationError, AuthorizationError
@@ -25,7 +25,7 @@ class AuthService:
     
     def __init__(self, db: Session):
         self.db = db
-        self.user_dao = UserDao(db)
+        self.user_dao = UserDAO(db)
     
     async def login(self, login_data: LoginRequest) -> LoginResponse:
         """

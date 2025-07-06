@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
-from core.config import settings
+from config.settings import settings
 
 class LogUtil:
     """日志工具类"""

@@ -124,7 +124,7 @@ class OrderList(BaseModel):
 
 class OrderUpload(BaseModel):
     """订单上传模式"""
-    file_type: str = Field(..., description="文件类型", regex="^(csv|json)$")
+    file_type: str = Field(..., description="文件类型", pattern="^(csv|json)$")
     data: List[Dict[str, Any]] = Field(..., description="订单数据")
 
 

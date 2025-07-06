@@ -45,3 +45,24 @@ class SecurityManager:
 
 # 全局安全管理器实例
 security_manager = SecurityManager()
+
+
+# 便利函数
+def get_password_hash(password: str) -> str:
+    """获取密码哈希值"""
+    return security_manager.hash_password(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """验证密码"""
+    return security_manager.verify_password(plain_password, hashed_password)
+
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """创建访问令牌"""
+    return security_manager.create_access_token(data, expires_delta)
+
+
+def verify_token(token: str) -> Optional[dict]:
+    """验证令牌"""
+    return security_manager.verify_token(token)

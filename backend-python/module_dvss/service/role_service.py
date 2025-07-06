@@ -5,7 +5,8 @@ from typing import List, Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 
-from module_dvss.entity.role import Role, RoleFieldPermission
+from module_dvss.entity.role import Role
+from module_dvss.entity.order_field import RoleFieldPermission
 from module_dvss.entity.user import User
 from module_dvss.schemas.role_schema import RoleCreate, RoleUpdate, RolePermissionCreate
 from module_dvss.dao.role_dao import RoleDAO

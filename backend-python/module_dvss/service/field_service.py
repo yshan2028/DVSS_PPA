@@ -15,9 +15,9 @@ from module_dvss.schemas.field_schema import (
     FieldPermission
 )
 from module_dvss.entity.order_field import OrderField, RoleFieldPermission
-from utils.log_util import get_logger
+from utils.log_util import LogUtil
 
-logger = get_logger(__name__)
+logger = LogUtil.get_logger(__name__)
 
 
 class FieldService:

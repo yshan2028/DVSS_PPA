@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
 from module_dvss.dao.shard_dao import ShardDao
-from module_dvss.dao.user_dao import UserDao
+from module_dvss.dao.user_dao import UserDAO
 from module_dvss.schemas.shard_schema import (
     ShardCreateRequest, ShardUpdateRequest, ShardResponse,
     ShardListResponse, ShardStatsResponse, ShardDetailResponse
@@ -27,7 +27,7 @@ class ShardService:
     def __init__(self, db: Session):
         self.db = db
         self.shard_dao = ShardDao(db)
-        self.user_dao = UserDao(db)
+        self.user_dao = UserDAO(db)
         self.crypto_util = CryptoUtil()
     
     async def create_shard(self, request: ShardCreateRequest, current_user_id: int) -> ShardResponse:

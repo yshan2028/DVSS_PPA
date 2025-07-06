@@ -6,7 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, delete
 from sqlalchemy.orm import selectinload
 
-from module_dvss.entity.role import Role, RoleFieldPermission
+from module_dvss.entity.role import Role
+from module_dvss.entity.order_field import RoleFieldPermission
 from utils.log_util import LogUtil
 
 logger = LogUtil.get_logger("role_dao")

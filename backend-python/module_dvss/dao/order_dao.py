@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from ..entity.original_order import OriginalOrder
 from ..entity.encrypted_order import EncryptedOrder
-from config.get_db import get_db_session
+from core.deps import get_db_session
 
 
 class OrderDAO:
