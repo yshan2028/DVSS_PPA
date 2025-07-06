@@ -212,6 +212,8 @@ services:
       - postgres
       - mongo
       - redis
+    ports:
+      - "8002:8002"
     networks:
       - dvss-network
     restart: unless-stopped

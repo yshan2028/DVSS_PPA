@@ -1,0 +1,54 @@
+
+[project]
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic",
+    "pydantic-settings",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "pymysql",
+    "motor",
+    "pymongo",
+    "redis[hiredis]",
+    "python-jose[cryptography]",
+    "passlib[bcrypt]",
+    "python-multipart",
+    "PyJWT",
+    "bcrypt",
+    "httpx",
+    "aiohttp",
+    "pandas",
+    "numpy",
+    "openpyxl",
+    "python-dotenv",
+    "psutil",
+    "cryptography",
+    "scipy",
+    "prometheus-client",
+    "prometheus-fastapi-instrumentator",
+    "neo4j",
+    "py2neo",
+    "loguru",
+    "pycryptodome",
+    "PyYAML",
+    "marshmallow",
+    "jsonschema",
+    "python-dateutil",
+    "scikit-learn",
+    "celery",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "py-ecc",
+    "merklelib",
+    "black",
+    "isort",
+    "asyncmy",
+]
+requires-python = ">=3.12"
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
