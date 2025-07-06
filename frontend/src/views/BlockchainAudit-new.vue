@@ -1,6 +1,5 @@
 <template>
-  <MainLayout>
-    <div class="audit-container">
+  <div class="audit-container">
     <!-- 页面标题 -->
     <div class="page-header">
       <h1>区块链审计</h1>
@@ -353,8 +352,7 @@
         </el-button>
       </template>
     </el-dialog>
-    </div>
-  </MainLayout>
+  </div>
 </template>
 
 <script setup>
@@ -362,7 +360,6 @@ import { ref, computed, onMounted, reactive } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { blockchainAPI, auditAPI } from '@/api/index'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import MainLayout from '@/components/MainLayout.vue'
 
 const authStore = useAuthStore()
 

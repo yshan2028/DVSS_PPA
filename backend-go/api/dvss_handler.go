@@ -177,7 +177,7 @@ func (h *DVSSHandler) UploadShardToBlockchain(c *gin.Context) {
 
 	utils.SuccessWithMessage(c, "分片上链成功", gin.H{
 		"transaction_id": txID,
-		"shard_id":      req.ShardID,
+		"shard_id":       req.ShardID,
 	})
 }
 
@@ -197,8 +197,8 @@ func (h *DVSSHandler) QueryShardFromBlockchain(c *gin.Context) {
 // VerifyShardIntegrity 验证分片完整性
 func (h *DVSSHandler) VerifyShardIntegrity(c *gin.Context) {
 	var req struct {
-		ShardID      string `json:"shard_id"`
-		CurrentHash  string `json:"current_hash"`
+		ShardID     string `json:"shard_id"`
+		CurrentHash string `json:"current_hash"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {

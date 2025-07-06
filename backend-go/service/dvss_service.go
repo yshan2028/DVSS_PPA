@@ -248,12 +248,12 @@ func (s *DVSSService) GetChannelInfo() ([]map[string]interface{}, error) {
 	// 暂时返回模拟数据
 	channels := []map[string]interface{}{
 		{
-			"name":        "dvss-channel",
-			"height":      100,
-			"peers":       []string{"peer0.org1.example.com", "peer1.org1.example.com"},
-			"chaincodes":  []string{"dvss-chaincode"},
-			"last_block":  time.Now().Add(-time.Minute * 5).Format(time.RFC3339),
-			"timestamp":   time.Now().Format(time.RFC3339),
+			"name":       "dvss-channel",
+			"height":     100,
+			"peers":      []string{"peer0.org1.example.com", "peer1.org1.example.com"},
+			"chaincodes": []string{"dvss-chaincode"},
+			"last_block": time.Now().Add(-time.Minute * 5).Format(time.RFC3339),
+			"timestamp":  time.Now().Format(time.RFC3339),
 		},
 	}
 
