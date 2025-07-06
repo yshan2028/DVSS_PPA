@@ -3,129 +3,131 @@
 提供数据库会话、认证等依赖
 """
 
+from typing import Optional, Generator
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.ext.asyncio import AsyncSession
-from config.get_db import get_db
-from core.security import security_manager
-from module_dvss.dao.user_dao import UserDAO
-from module_dvss.dao.role_dao import RoleDAO
-from module_dvss.dao.field_dao import FieldDAO
-from module_dvss.dao.order_dao import OrderDAO
-from module_dvss.dao.log_dao import LogDAO
-from module_dvss.service.user_service import UserService
-from module_dvss.service.role_service import RoleService
-from module_dvss.service.field_service import FieldService
-from module_dvss.service.order_service import OrderService
-from module_dvss.service.encryption_service import EncryptionService
-from module_dvss.service.sensitivity_service import SensitivityService
-from module_dvss.service.audit_service import AuditService
+from sqlalchemy.orm import Session
+
+from config.database import SessionLocal
+from module_dvss.service.auth_service import AuthService
+from module_dvss.entity.user import User
+from exceptions.custom_exception import AuthenticationError, AuthorizationError
 
 security = HTTPBearer()
 
+
+def get_db() -> Generator[Session, None, None]:
+    """获取数据库会话"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: AsyncSession = Depends(get_db)
-):
-    """获取当前用户"""
-    token = credentials.credentials
-    payload = security_manager.verify_token(token)
+    db: Session = Depends(get_db)
+) -> User:
+    """
+    获取当前用户
     
-    if payload is None:
+    Args:
+        credentials: HTTP认证凭据
+        db: 数据库会话
+        
+    Returns:
+        User: 当前用户对象
+        
+    Raises:
+        HTTPException: 认证失败时抛出401错误
+    """
+    try:
+        token = credentials.credentials
+        auth_service = AuthService(db)
+        user = await auth_service.verify_token(token)
+        return user
+        
+    except (AuthenticationError, AuthorizationError) as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token无效或已过期",
+            detail=str(e),
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    user_id = payload.get("sub")
-    if user_id is None:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token无效",
+            detail="Token验证失败",
+            headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+async def get_current_active_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """
+    获取当前活跃用户
     
-    user_dao = UserDAO(db)
-    user = await user_dao.get_user_by_id(int(user_id))
-    if user is None:
+    Args:
+        current_user: 当前用户
+        
+    Returns:
+        User: 活跃用户对象
+        
+    Raises:
+        HTTPException: 用户未激活时抛出403错误
+    """
+    if not current_user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="用户不存在"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="用户未激活"
         )
+    return current_user
+
+
+async def get_admin_user(
+    current_user: User = Depends(get_current_active_user)
+) -> User:
+    """
+    获取管理员用户
     
-    return user
+    Args:
+        current_user: 当前用户
+        
+    Returns:
+        User: 管理员用户对象
+        
+    Raises:
+        HTTPException: 非管理员用户时抛出403错误
+    """
+    if not current_user.role or current_user.role.name != 'admin':
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="需要管理员权限"
+        )
+    return current_user
 
-def require_permission(permission: str):
-    """权限检查装饰器"""
-    def decorator(func):
-        async def wrapper(*args, **kwargs):
-            # 这里可以添加权限检查逻辑
-            return await func(*args, **kwargs)
-        return wrapper
-    return decorator
 
-# DAO 依赖注入
-async def get_user_dao() -> UserDAO:
-    """获取用户DAO"""
-    return UserDAO()
-
-async def get_role_dao() -> RoleDAO:
-    """获取角色DAO"""
-    return RoleDAO()
-
-async def get_field_dao() -> FieldDAO:
-    """获取字段DAO"""
-    return FieldDAO()
-
-async def get_order_dao() -> OrderDAO:
-    """获取订单DAO"""
-    return OrderDAO()
-
-async def get_log_dao() -> LogDAO:
-    """获取日志DAO"""
-    return LogDAO()
-
-# Service 依赖注入
-async def get_user_service(
-    user_dao: UserDAO = Depends(get_user_dao),
-    role_dao: RoleDAO = Depends(get_role_dao)
-) -> UserService:
-    """获取用户服务"""
-    return UserService(user_dao, role_dao)
-
-async def get_role_service(
-    role_dao: RoleDAO = Depends(get_role_dao)
-) -> RoleService:
-    """获取角色服务"""
-    return RoleService(role_dao)
-
-async def get_field_service(
-    field_dao: FieldDAO = Depends(get_field_dao)
-) -> FieldService:
-    """获取字段服务"""
-    return FieldService(field_dao)
-
-async def get_encryption_service() -> EncryptionService:
-    """获取加密服务"""
-    return EncryptionService()
-
-async def get_sensitivity_service(
-    field_dao: FieldDAO = Depends(get_field_dao)
-) -> SensitivityService:
-    """获取敏感度服务"""
-    return SensitivityService(field_dao)
-
-async def get_audit_service(
-    log_dao: LogDAO = Depends(get_log_dao)
-) -> AuditService:
-    """获取审计服务"""
-    return AuditService(log_dao)
-
-async def get_order_service(
-    order_dao: OrderDAO = Depends(get_order_dao),
-    encryption_service: EncryptionService = Depends(get_encryption_service),
-    sensitivity_service: SensitivityService = Depends(get_sensitivity_service),
-    audit_service: AuditService = Depends(get_audit_service)
-) -> OrderService:
-    """获取订单服务"""
-    return OrderService(order_dao, encryption_service, sensitivity_service, audit_service)
+def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """
+    获取可选的当前用户（用于不需要强制认证的接口）
+    
+    Args:
+        credentials: HTTP认证凭据（可选）
+        db: 数据库会话
+        
+    Returns:
+        Optional[User]: 用户对象或None
+    """
+    if not credentials:
+        return None
+    
+    try:
+        token = credentials.credentials
+        auth_service = AuthService(db)
+        return auth_service.verify_token(token)
+    except Exception:
+        return None
