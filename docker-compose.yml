@@ -8,10 +8,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://dvss:dvss123@postgres:5432/dvss_db
-      - MONGODB_URL=mongodb://mongo:27017
+      - DATABASE_URL=postgresql://dvss:admin123@postgres:5432/dvss_db
+      - MONGODB_URL=mongodb://dvss:admin123@mongo:27017
       - REDIS_HOST=redis
+      - REDIS_PASSWORD=admin123
       - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=admin123
       - GO_BACKEND_URL=http://backend-go:8001
     volumes:
       - ./backend-python/logs:/app/logs
@@ -35,6 +38,7 @@ services:
     environment:
       - PYTHON_BACKEND_URL=http://backend-python:8000
       - ENVIRONMENT=docker
+      - DATABASE_URL=postgresql://dvss:admin123@postgres:5432/dvss_db
     volumes:
       - ./backend-go/logs:/app/logs
       - ./fabric-config:/app/fabric-config
@@ -82,7 +86,7 @@ services:
     environment:
       POSTGRES_DB: dvss_db
       POSTGRES_USER: dvss
-      POSTGRES_PASSWORD: dvss123
+      POSTGRES_PASSWORD: admin123
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-postgres.sql:/docker-entrypoint-initdb.d/init.sql
@@ -98,7 +102,7 @@ services:
     container_name: dvss-mongo
     environment:
       MONGO_INITDB_ROOT_USERNAME: dvss
-      MONGO_INITDB_ROOT_PASSWORD: dvss123
+      MONGO_INITDB_ROOT_PASSWORD: admin123
     volumes:
       - mongo_data:/data/db
     ports:
@@ -111,7 +115,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: dvss-redis
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass admin123
     volumes:
       - redis_data:/data
     ports:
@@ -125,7 +129,7 @@ services:
     image: neo4j:5.14
     container_name: dvss-neo4j
     environment:
-      NEO4J_AUTH: neo4j/neo4j123
+      NEO4J_AUTH: neo4j/admin123
       NEO4J_PLUGINS: '["apoc"]'
     volumes:
       - neo4j_data:/data
@@ -201,9 +205,10 @@ services:
       - ./etl:/app
       - ./etl/logs:/app/logs
     environment:
-      - DATABASE_URL=postgresql://dvss:dvss123@postgres:5432/dvss_db
-      - MONGODB_URL=mongodb://dvss:dvss123@mongo:27017
+      - DATABASE_URL=postgresql://dvss:admin123@postgres:5432/dvss_db
+      - MONGODB_URL=mongodb://dvss:admin123@mongo:27017
       - REDIS_HOST=redis
+      - REDIS_PASSWORD=admin123
       - PYTHONPATH=/app
     depends_on:
       - postgres

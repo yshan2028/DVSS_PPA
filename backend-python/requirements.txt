@@ -48,7 +48,6 @@ loguru==0.7.2
 # 密码学和零知识证明
 secretsharing==0.2.6
 pycryptodome==3.19.0
-hashlib-compat==1.0.1
 
 # 配置文件处理
 PyYAML==6.0.1
@@ -78,7 +77,5 @@ py_ecc==6.0.0
 merklelib==1.0
 
 # 开发工具
-pytest==7.4.3
-pytest-asyncio==0.21.1
 black==23.11.0
 isort==5.12.0
