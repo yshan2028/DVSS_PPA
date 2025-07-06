@@ -48,18 +48,6 @@ const publicRoutes = [
         name: 'PublicEncrypt',
         component: () => import('@/views/public/Encrypt.vue'),
         meta: { title: '数据加密' }
-      },
-      {
-        path: 'public/about',
-        name: 'PublicAbout',
-        component: () => import('@/views/public/About.vue'),
-        meta: { title: '关于我们' }
-      },
-      {
-        path: 'public/contact',
-        name: 'PublicContact',
-        component: () => import('@/views/public/Contact.vue'),
-        meta: { title: '联系我们' }
       }
     ]
   }

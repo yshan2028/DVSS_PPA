@@ -4,7 +4,7 @@
     <el-header class="app-header" height="60px">
       <div class="header-content">
         <div class="header-left">
-          <img src="/logo.png" alt="DVSS-PPA" class="logo" />
+          <div class="logo-text">DVSS</div>
           <h1 class="app-title">DVSS-PPA 系统</h1>
         </div>
         

@@ -4,7 +4,7 @@
     <el-header class="public-header" height="60px">
       <div class="header-content">
         <div class="header-left">
-          <img src="/logo.png" alt="DVSS-PPA" class="logo" />
+          <div class="logo-text">DVSS</div>
           <h1 class="app-title">DVSS-PPA 系统</h1>
         </div>
         
@@ -61,10 +61,15 @@ const goToLogin = () => {
     display: flex;
     align-items: center;
     
-    .logo {
-      width: 32px;
-      height: 32px;
+    .logo-text {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
       margin-right: 12px;
+      letter-spacing: 1px;
     }
     
     .app-title {
