@@ -1,0 +1,75 @@
+# 数据敏感度配置
+field_weights:
+  # 基础信息
+  order_id: 0.1
+  timestamp: 0.1
+  
+  # 用户身份信息 (高敏感)
+  user_id: 0.8
+  name: 0.9
+  phone: 0.9
+  email: 0.8
+  
+  # 地址信息 (高敏感)
+  address: 0.9
+  shipping_address: 0.9
+  billing_address: 0.8
+  zip_code: 0.7
+  city: 0.5
+  state: 0.4
+  country: 0.3
+  
+  # 支付信息 (极高敏感)
+  payment_info: 1.0
+  credit_card: 1.0
+  bank_account: 1.0
+  payment_method: 0.6
+  
+  # 商品信息 (低敏感)
+  item_list: 0.3
+  item_name: 0.2
+  item_price: 0.4
+  quantity: 0.1
+  
+  # 金额信息 (中等敏感)
+  total_amount: 0.6
+  tax_amount: 0.4
+  shipping_cost: 0.3
+  discount: 0.3
+
+# 敏感度等级阈值
+sensitivity_levels:
+  low: 0.3
+  medium: 0.6
+  high: 0.8
+  critical: 0.9
+
+# 字段分类
+field_categories:
+  pii:  # 个人身份信息
+    - user_id
+    - name
+    - phone
+    - email
+  
+  financial:  # 财务信息
+    - payment_info
+    - credit_card
+    - bank_account
+    - total_amount
+    - tax_amount
+  
+  location:  # 位置信息
+    - address
+    - shipping_address
+    - billing_address
+    - zip_code
+    - city
+    - state
+  
+  business:  # 业务信息
+    - order_id
+    - item_list
+    - item_name
+    - quantity
+    - timestamp

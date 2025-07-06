@@ -1,0 +1,64 @@
+server:
+  port: 8080
+  readTimeout: 30
+  writeTimeout: 30
+  idleTimeout: 120
+
+# 连接池配置
+pool:
+  maxConnections: 10
+  idleTimeout: 300
+  maxRetries: 3
+  healthCheckPeriod: 60
+
+fabric:
+  channelName: "dvss-channel"
+  chaincodeName: "dvss-chaincode"
+  organizations:
+    org1:
+      mspID: "Org1MSP"
+      certPath: "/opt/crypto-config/peerOrganizations/org1.dvss-ppa.com/users/Admin@org1.dvss-ppa.com/msp/signcerts"
+      keyPath: "/opt/crypto-config/peerOrganizations/org1.dvss-ppa.com/users/Admin@org1.dvss-ppa.com/msp/keystore"
+      tlsCertPath: "/opt/crypto-config/peerOrganizations/org1.dvss-ppa.com/peers/peer0.org1.dvss-ppa.com/tls/ca.crt"
+      peerEndpoint: "peer0.org1.dvss-ppa.com:7051"
+      gatewayPeer: "peer0.org1.dvss-ppa.com"
+    org2:
+      mspID: "Org2MSP"
+      certPath: "/opt/crypto-config/peerOrganizations/org2.dvss-ppa.com/users/Admin@org2.dvss-ppa.com/msp/signcerts"
+      keyPath: "/opt/crypto-config/peerOrganizations/org2.dvss-ppa.com/users/Admin@org2.dvss-ppa.com/msp/keystore"
+      tlsCertPath: "/opt/crypto-config/peerOrganizations/org2.dvss-ppa.com/peers/peer0.org2.dvss-ppa.com/tls/ca.crt"
+      peerEndpoint: "peer0.org2.dvss-ppa.com:9051"
+      gatewayPeer: "peer0.org2.dvss-ppa.com"
+    org3:
+      mspID: "Org3MSP"
+      certPath: "/opt/crypto-config/peerOrganizations/org3.dvss-ppa.com/users/Admin@org3.dvss-ppa.com/msp/signcerts"
+      keyPath: "/opt/crypto-config/peerOrganizations/org3.dvss-ppa.com/users/Admin@org3.dvss-ppa.com/msp/keystore"
+      tlsCertPath: "/opt/crypto-config/peerOrganizations/org3.dvss-ppa.com/peers/peer0.org3.dvss-ppa.com/tls/ca.crt"
+      peerEndpoint: "peer0.org3.dvss-ppa.com:11051"
+      gatewayPeer: "peer0.org3.dvss-ppa.com"
+
+# 网络配置
+network:
+  domain: "dvss-ppa.com"
+  orderers:
+    - name: "orderer.dvss-ppa.com"
+      endpoint: "orderer.dvss-ppa.com:7050"
+      tlsCertPath: "/opt/crypto-config/ordererOrganizations/dvss-ppa.com/orderers/orderer.dvss-ppa.com/tls/ca.crt"
+  
+# 安全配置
+security:
+  enableTLS: true
+  enableMutualTLS: true
+  clientTimeout: 30s
+  connectionTimeout: 10s
+  tlsEnabled: false
+  allowedOrigins:
+    - "*"
+  rateLimit: 100
+  apiKeyRequired: false
+  
+# 监控配置
+monitoring:
+  enableBlockListener: true
+  blockSaveDir: "./data/blocks"
+  metricsEnabled: true

@@ -1,0 +1,28 @@
+server:
+  port: 8001
+
+fabric:
+  channelName: "dvss-channel"
+  chaincodeName: "dvss-ppa"
+  organizations:
+    org1:
+      mspID: "Org1MSP"
+      certPath: "./crypto-config/peerOrganizations/org1.dvss.com/users/Admin@org1.dvss.com/msp/signcerts"
+      keyPath: "./crypto-config/peerOrganizations/org1.dvss.com/users/Admin@org1.dvss.com/msp/keystore"
+      tlsCertPath: "./crypto-config/peerOrganizations/org1.dvss.com/peers/peer0.org1.dvss.com/tls/ca.crt"
+      peerEndpoint: "localhost:7051"
+      gatewayPeer: "peer0.org1.dvss.com"
+    org2:
+      mspID: "Org2MSP"
+      certPath: "./crypto-config/peerOrganizations/org2.dvss.com/users/Admin@org2.dvss.com/msp/signcerts"
+      keyPath: "./crypto-config/peerOrganizations/org2.dvss.com/users/Admin@org2.dvss.com/msp/keystore"
+      tlsCertPath: "./crypto-config/peerOrganizations/org2.dvss.com/peers/peer0.org2.dvss.com/tls/ca.crt"
+      peerEndpoint: "localhost:8051"
+      gatewayPeer: "peer0.org2.dvss.com"
+    org3:
+      mspID: "Org3MSP"
+      certPath: "./crypto-config/peerOrganizations/org3.dvss.com/users/Admin@org3.dvss.com/msp/signcerts"
+      keyPath: "./crypto-config/peerOrganizations/org3.dvss.com/users/Admin@org3.dvss.com/msp/keystore"
+      tlsCertPath: "./crypto-config/peerOrganizations/org3.dvss.com/peers/peer0.org3.dvss.com/tls/ca.crt"
+      peerEndpoint: "localhost:9051"
+      gatewayPeer: "peer0.org3.dvss.com"

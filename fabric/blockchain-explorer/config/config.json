@@ -1,0 +1,9 @@
+{
+  "network-configs": {
+    "dvss-network": {
+      "name": "DVSS Network",
+      "profile": "./connection-profile/dvss-network.json"
+    }
+  },
+  "license": "Apache-2.0"
+}

@@ -1,0 +1,70 @@
+# 动态阈值计算配置
+dynamic_threshold:
+  # 公式: k = α·L + β·S + γ
+  # L: 系统负载 (0-1)
+  # S: 数据敏感度 (0-1)
+  
+  # 系数配置
+  coefficients:
+    alpha: 0.3  # 系统负载权重
+    beta: 0.5   # 敏感度权重
+    gamma: 2    # 基础阈值
+  
+  # 系统负载权重配置
+  load_weights:
+    cpu_usage: 0.3
+    memory_usage: 0.25
+    disk_io: 0.2
+    network_io: 0.15
+    active_connections: 0.1
+  
+  # 负载等级阈值
+  load_thresholds:
+    low: 0.3
+    medium: 0.6
+    high: 0.8
+    critical: 0.9
+  
+  # k值范围限制
+  k_range:
+    min: 2
+    max: 10
+    default: 3
+  
+  # 分片配置
+  sharding:
+    total_shards: 5  # n值
+    default_threshold: 3  # 默认k值
+    
+# Prometheus监控配置
+monitoring:
+  prometheus:
+    scrape_interval: 15s
+    evaluation_interval: 15s
+    
+  # 告警规则
+  alerts:
+    high_cpu:
+      threshold: 80
+      duration: 5m
+    
+    high_memory:
+      threshold: 85
+      duration: 3m
+    
+    high_disk_io:
+      threshold: 75
+      duration: 10m
+
+# Redis缓存配置
+cache:
+  current_k_key: "current_k"
+  system_load_key: "system_load"
+  ttl: 300  # 5分钟
+  
+# 系统性能基准
+benchmarks:
+  cpu_cores: 4
+  memory_gb: 8
+  disk_iops: 1000
+  network_mbps: 100

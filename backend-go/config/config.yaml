@@ -1,0 +1,21 @@
+server:
+  port: 8001
+
+fabric:
+  channelName: "dvss-channel"
+  chaincodeName: "dvss-ppa"
+  organizations:
+    org1:
+      mspID: "Org1MSP"
+      certPath: "../fabric/network/crypto-config/peerOrganizations/org1.dvss-ppa.com/users/Admin@org1.dvss-ppa.com/msp/signcerts"
+      keyPath: "../fabric/network/crypto-config/peerOrganizations/org1.dvss-ppa.com/users/Admin@org1.dvss-ppa.com/msp/keystore"
+      tlsCertPath: "../fabric/network/crypto-config/peerOrganizations/org1.dvss-ppa.com/peers/peer0.org1.dvss-ppa.com/tls/ca.crt"
+      peerEndpoint: "localhost:7051"
+      gatewayPeer: "peer0.org1.dvss-ppa.com"
+    org2:
+      mspID: "Org2MSP"
+      certPath: "../fabric/network/crypto-config/peerOrganizations/org2.dvss-ppa.com/users/Admin@org2.dvss-ppa.com/msp/signcerts"
+      keyPath: "../fabric/network/crypto-config/peerOrganizations/org2.dvss-ppa.com/users/Admin@org2.dvss-ppa.com/msp/keystore"
+      tlsCertPath: "../fabric/network/crypto-config/peerOrganizations/org2.dvss-ppa.com/peers/peer0.org2.dvss-ppa.com/tls/ca.crt"
+      peerEndpoint: "localhost:9051"
+      gatewayPeer: "peer0.org2.dvss-ppa.com"

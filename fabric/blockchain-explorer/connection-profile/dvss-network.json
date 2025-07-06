@@ -1,0 +1,74 @@
+{
+  "name": "dvss-network",
+  "version": "1.0.0",
+  "client": {
+    "tlsEnable": false,
+    "adminCredential": {
+      "id": "exploreradmin",
+      "password": "exploreradminpw"
+    },
+    "enableAuthentication": false,
+    "organization": "Org1MSP",
+    "connection": {
+      "timeout": {
+        "peer": {
+          "endorser": "300"
+        },
+        "orderer": "300"
+      }
+    }
+  },
+  "channels": {
+    "dvsschannel": {
+      "peers": {
+        "peer0.org1.dvss-ppa.com": {
+          "endorsingPeer": true,
+          "chaincodeQuery": true,
+          "ledgerQuery": true,
+          "eventSource": true
+        },
+        "peer0.org2.dvss-ppa.com": {
+          "endorsingPeer": true,
+          "chaincodeQuery": true,
+          "ledgerQuery": true,
+          "eventSource": true
+        }
+      }
+    }
+  },
+  "organizations": {
+    "Org1MSP": {
+      "mspid": "Org1MSP",
+      "adminPrivateKey": {
+        "path": "/tmp/crypto/peerOrganizations/org1.dvss-ppa.com/users/Admin@org1.dvss-ppa.com/msp/keystore"
+      },
+      "signedCert": {
+        "path": "/tmp/crypto/peerOrganizations/org1.dvss-ppa.com/users/Admin@org1.dvss-ppa.com/msp/signcerts"
+      }
+    },
+    "Org2MSP": {
+      "mspid": "Org2MSP",
+      "adminPrivateKey": {
+        "path": "/tmp/crypto/peerOrganizations/org2.dvss-ppa.com/users/Admin@org2.dvss-ppa.com/msp/keystore"
+      },
+      "signedCert": {
+        "path": "/tmp/crypto/peerOrganizations/org2.dvss-ppa.com/users/Admin@org2.dvss-ppa.com/msp/signcerts"
+      }
+    }
+  },
+  "peers": {
+    "peer0.org1.dvss-ppa.com": {
+      "url": "grpc://peer0.org1.dvss-ppa.com:7051",
+      "eventUrl": "grpc://peer0.org1.dvss-ppa.com:7053"
+    },
+    "peer0.org2.dvss-ppa.com": {
+      "url": "grpc://peer0.org2.dvss-ppa.com:9051",
+      "eventUrl": "grpc://peer0.org2.dvss-ppa.com:9053"
+    }
+  },
+  "orderers": {
+    "orderer.dvss-ppa.com": {
+      "url": "grpc://orderer.dvss-ppa.com:7050"
+    }
+  }
+}
