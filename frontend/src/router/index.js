@@ -1,6 +1,28 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
+// 认证相关路由
+const authRoutes = [
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/Login.vue'),
+    meta: { title: '用户登录', requiresGuest: true }
+  },
+  {
+    path: '/admin/login',
+    name: 'AdminLogin',
+    component: () => import('@/views/AdminLogin.vue'),
+    meta: { title: '管理员登录', requiresGuest: true }
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/public/Register.vue'),
+    meta: { title: '用户注册', requiresGuest: true }
+  }
+]
+
 // 公共页面（前台）
 const publicRoutes = [
   {
@@ -40,18 +62,6 @@ const publicRoutes = [
         meta: { title: '联系我们' }
       }
     ]
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: () => import('@/views/Login.vue'),
-    meta: { title: '登录' }
-  },
-  {
-    path: '/register',
-    name: 'Register',
-    component: () => import('@/views/public/Register.vue'),
-    meta: { title: '注册' }
   }
 ]
 
@@ -67,7 +77,7 @@ const adminRoutes = [
       {
         path: 'dashboard',
         name: 'AdminDashboard',
-        component: () => import('@/views/admin/Dashboard.vue'),
+        component: () => import('@/views/admin/Dashboard/index.vue'),
         meta: { 
           title: '仪表板',
           requiresAuth: true,
@@ -78,7 +88,7 @@ const adminRoutes = [
       {
         path: 'users',
         name: 'UserManagement',
-        component: () => import('@/views/admin/UserManagement.vue'),
+        component: () => import('@/views/admin/User/index.vue'),
         meta: { 
           title: '用户管理',
           requiresAuth: true,
@@ -89,7 +99,7 @@ const adminRoutes = [
       {
         path: 'roles',
         name: 'RoleManagement',
-        component: () => import('@/views/admin/RoleManagement.vue'),
+        component: () => import('@/views/admin/Role/index.vue'),
         meta: { 
           title: '角色管理',
           requiresAuth: true,
@@ -100,7 +110,7 @@ const adminRoutes = [
       {
         path: 'fields',
         name: 'FieldManagement',
-        component: () => import('@/views/admin/FieldManagement.vue'),
+        component: () => import('@/views/admin/Field/index.vue'),
         meta: { 
           title: '字段管理',
           requiresAuth: true,
@@ -111,7 +121,7 @@ const adminRoutes = [
       {
         path: 'orders',
         name: 'OrderManagement',
-        component: () => import('@/views/admin/OrderManagement.vue'),
+        component: () => import('@/views/admin/Order/index.vue'),
         meta: { 
           title: '订单管理',
           requiresAuth: true,
@@ -122,7 +132,7 @@ const adminRoutes = [
       {
         path: 'shards',
         name: 'ShardManagement',
-        component: () => import('@/views/admin/ShardManagement.vue'),
+        component: () => import('@/views/admin/Shard/index.vue'),
         meta: { 
           title: '分片管理',
           requiresAuth: true,
@@ -133,7 +143,7 @@ const adminRoutes = [
       {
         path: 'logs',
         name: 'LogManagement',
-        component: () => import('@/views/admin/LogManagement.vue'),
+        component: () => import('@/views/admin/Log/index.vue'),
         meta: { 
           title: '操作日志',
           requiresAuth: true,
@@ -144,7 +154,7 @@ const adminRoutes = [
       {
         path: 'blockchain',
         name: 'BlockchainManagement',
-        component: () => import('@/views/admin/BlockchainManagement.vue'),
+        component: () => import('@/views/admin/Blockchain/index.vue'),
         meta: { 
           title: '区块链管理',
           requiresAuth: true,
@@ -155,7 +165,7 @@ const adminRoutes = [
       {
         path: 'settings',
         name: 'SystemSettings',
-        component: () => import('@/views/admin/SystemSettings.vue'),
+        component: () => import('@/views/admin/SystemSettings/index.vue'),
         meta: { 
           title: '系统设置',
           requiresAuth: true,
@@ -170,6 +180,7 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     ...publicRoutes,
+    ...authRoutes,
     ...adminRoutes,
     // 404页面
     {

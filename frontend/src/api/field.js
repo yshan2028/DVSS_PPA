@@ -74,3 +74,6 @@ export const fieldAPI = {
     return api.post('/fields/validate', configData)
   }
 }
+
+export const fieldApi = fieldAPI
+export default fieldAPI

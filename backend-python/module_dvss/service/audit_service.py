@@ -15,7 +15,7 @@ from ..schemas.log_schema import (
 )
 from ..entity.operation_log import OperationLog
 from core.deps import get_db_session
-from exceptions.custom_exception import BusinessException
+from exceptions.custom_exception import DVSSException
 import json
 import uuid
 
@@ -148,7 +148,7 @@ class AuditService:
             result = await self.log_dao.search_logs(search_request, page, size)
             return result
         except Exception as e:
-            raise BusinessException(f"搜索日志失败: {str(e)}")
+            raise DVSSException(f"搜索日志失败: {str(e)}")
     
     async def get_log_statistics(self, start_date: datetime, end_date: datetime) -> LogStatsResponse:
         """获取日志统计信息"""
@@ -156,7 +156,7 @@ class AuditService:
             stats = await self.log_dao.get_statistics(start_date, end_date)
             return LogStatsResponse(**stats)
         except Exception as e:
-            raise BusinessException(f"获取日志统计失败: {str(e)}")
+            raise DVSSException(f"获取日志统计失败: {str(e)}")
     
     async def generate_audit_report(self, request: AuditReportRequest) -> AuditReportResponse:
         """生成审计报告"""
@@ -191,7 +191,7 @@ class AuditService:
             )
             
         except Exception as e:
-            raise BusinessException(f"生成审计报告失败: {str(e)}")
+            raise DVSSException(f"生成审计报告失败: {str(e)}")
     
     async def track_data_access(self, user_id: int, data_type: str, data_id: str,
                                access_type: str, sensitive_fields: List[str] = None) -> bool:
@@ -255,7 +255,7 @@ class AuditService:
             return operation_id
             
         except Exception as e:
-            raise BusinessException(f"跟踪敏感操作失败: {str(e)}")
+            raise DVSSException(f"跟踪敏感操作失败: {str(e)}")
     
     async def get_user_activity_timeline(self, user_id: int, days: int = 30) -> List[Dict[str, Any]]:
         """获取用户活动时间线"""
@@ -279,7 +279,7 @@ class AuditService:
             return timeline
             
         except Exception as e:
-            raise BusinessException(f"获取用户活动时间线失败: {str(e)}")
+            raise DVSSException(f"获取用户活动时间线失败: {str(e)}")
     
     async def detect_anomalous_behavior(self, user_id: int) -> Dict[str, Any]:
         """检测异常行为"""
@@ -319,7 +319,7 @@ class AuditService:
             }
             
         except Exception as e:
-            raise BusinessException(f"检测异常行为失败: {str(e)}")
+            raise DVSSException(f"检测异常行为失败: {str(e)}")
     
     async def _check_security_alerts(self, log_data: OperationLogCreate) -> None:
         """检查安全告警"""

@@ -54,3 +54,7 @@ export const logAPI = {
     return api.get('/logs/operations/errors', params)
   }
 }
+
+// 导出为logApi和logAPI两种命名
+export const logApi = logAPI
+export default logAPI

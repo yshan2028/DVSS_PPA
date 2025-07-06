@@ -62,3 +62,7 @@ export const roleAPI = {
     return api.get('/roles/stats')
   }
 }
+
+// 导出为roleApi和roleAPI两种命名
+export const roleApi = roleAPI
+export default roleAPI

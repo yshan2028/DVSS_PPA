@@ -52,7 +52,8 @@ py2neo==2021.2.4
 loguru==0.7.2
 
 # 密码学和零知识证明
-secretsharing==0.2.6
+# secretsharing==0.2.6  # 替换为兼容Python 3的库
+shamirssecret==1.0.0
 pycryptodome==3.19.0
 
 # 配置文件处理

@@ -9,6 +9,16 @@ export const authAPI = {
     return api.post('/auth/login', loginData)
   },
 
+  // 管理员登录
+  adminLogin: (loginData) => {
+    return api.post('/auth/admin/login', loginData)
+  },
+
+  // 用户注册
+  register: (registerData) => {
+    return api.post('/auth/register', registerData)
+  },
+
   // 用户登出
   logout: () => {
     return api.post('/auth/logout')

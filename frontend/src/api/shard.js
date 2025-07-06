@@ -81,3 +81,7 @@ export const shardAPI = {
     return api.get(`/shards/${shardId}/access-logs`, params)
   }
 }
+
+// 导出为shardApi和shardAPI两种命名
+export const shardApi = shardAPI
+export default shardAPI

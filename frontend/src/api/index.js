@@ -307,7 +307,7 @@ export const orderAPI = {
 }
 
 // 导出所有 API
-export default {
+const allAPI = {
   auth: authAPI,
   dvss: dvssAPI,
   data: dataAPI,
@@ -325,3 +325,11 @@ export default {
   pythonAPI,
   goAPI
 }
+
+// 默认导出和命名导出
+export const api = {
+  pythonAPI,
+  goAPI
+}
+
+export default allAPI

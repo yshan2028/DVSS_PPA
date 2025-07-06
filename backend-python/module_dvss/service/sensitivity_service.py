@@ -7,7 +7,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 from ..dao.field_dao import FieldDAO
-from exceptions.custom_exception import BusinessException
+from exceptions.custom_exception import DVSSException
 
 
 class SensitivityService:
@@ -115,7 +115,7 @@ class SensitivityService:
             return round(final_score, 3)
             
         except Exception as e:
-            raise BusinessException(f"计算订单敏感度失败: {str(e)}")
+            raise DVSSException(f"计算订单敏感度失败: {str(e)}")
     
     async def calculate_field_sensitivity(self, field_name: str, field_value: Any) -> float:
         """计算单个字段的敏感度分值"""
@@ -277,7 +277,7 @@ class SensitivityService:
             }
             
         except Exception as e:
-            raise BusinessException(f"订单敏感度分析失败: {str(e)}")
+            raise DVSSException(f"订单敏感度分析失败: {str(e)}")
     
     def _has_identity_linkage_risk(self, field_scores: Dict[str, float]) -> bool:
         """检查是否存在身份关联风险"""
@@ -306,14 +306,14 @@ class SensitivityService:
             # 验证阈值合理性
             for category, threshold in thresholds.items():
                 if not 0.0 <= threshold <= 1.0:
-                    raise BusinessException(f"阈值必须在0-1之间: {category}={threshold}")
+                    raise DVSSException(f"阈值必须在0-1之间: {category}={threshold}")
             
             # 更新权重配置
             self.sensitivity_weights.update(thresholds)
             
             return True
         except Exception as e:
-            raise BusinessException(f"更新敏感度阈值失败: {str(e)}")
+            raise DVSSException(f"更新敏感度阈值失败: {str(e)}")
     
     async def get_sensitivity_report(self, order_ids: List[int]) -> Dict[str, Any]:
         """生成敏感度报告"""
@@ -342,7 +342,7 @@ class SensitivityService:
             }
             
         except Exception as e:
-            raise BusinessException(f"生成敏感度报告失败: {str(e)}")
+            raise DVSSException(f"生成敏感度报告失败: {str(e)}")
     
     def get_supported_categories(self) -> List[str]:
         """获取支持的敏感度类别"""

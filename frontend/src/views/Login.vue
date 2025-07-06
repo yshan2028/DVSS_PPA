@@ -48,33 +48,43 @@
         </el-form-item>
       </el-form>
       
+      <div class="login-links">
+        <el-link type="primary" @click="goToRegister">
+          还没有账号？立即注册
+        </el-link>
+        <el-divider direction="vertical" />
+        <el-link type="info" @click="goToAdminLogin">
+          管理员登录
+        </el-link>
+      </div>
+      
       <div class="demo-accounts">
-        <h4>演示账户</h4>
+        <h4>演示账户 (前台用户)</h4>
         <div class="account-grid">
-          <div class="account-card" @click="fillAccount('platform', 'admin')">
-            <strong>平台管理</strong>
-            <p>用户名: platform</p>
-            <p>平台管理权限</p>
+          <div class="account-card" @click="fillAccount('user001', 'password123')">
+            <strong>普通用户</strong>
+            <p>用户名: user001</p>
+            <p>基础查询权限</p>
           </div>
-          <div class="account-card" @click="fillAccount('auditor', 'admin')">
-            <strong>审计人员</strong>
-            <p>用户名: auditor</p>
-            <p>审计查看权限</p>
-          </div>
-          <div class="account-card" @click="fillAccount('seller', 'admin')">
-            <strong>卖家</strong>
-            <p>用户名: seller</p>
-            <p>订单客户权限</p>
-          </div>
-          <div class="account-card" @click="fillAccount('payment_provider', 'admin')">
-            <strong>支付服务商</strong>
-            <p>用户名: payment_provider</p>
+          <div class="account-card" @click="fillAccount('merchant001', 'password123')">
+            <strong>支付商</strong>
+            <p>用户名: merchant001</p>
             <p>支付数据权限</p>
           </div>
-          <div class="account-card" @click="fillAccount('logistics', 'admin')">
-            <strong>物流</strong>
-            <p>用户名: logistics</p>
+          <div class="account-card" @click="fillAccount('logistics001', 'password123')">
+            <strong>物流商</strong>
+            <p>用户名: logistics001</p>
             <p>物流配送权限</p>
+          </div>
+          <div class="account-card" @click="fillAccount('platform001', 'password123')">
+            <strong>平台方</strong>
+            <p>用户名: platform001</p>
+            <p>平台运营权限</p>
+          </div>
+          <div class="account-card" @click="fillAccount('auditor001', 'password123')">
+            <strong>审计方</strong>
+            <p>用户名: auditor001</p>
+            <p>审计查看权限</p>
           </div>
         </div>
       </div>
@@ -85,11 +95,11 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
+import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
-const userStore = useUserStore()
+const authStore = useAuthStore()
 
 const loginFormRef = ref()
 const loading = ref(false)
@@ -101,7 +111,17 @@ const loginForm = reactive({
 
 const loginRules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' }
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { 
+      validator: (rule, value, callback) => {
+        if (value === 'admin') {
+          callback(new Error('请使用管理员登录入口'))
+        } else {
+          callback()
+        }
+      }, 
+      trigger: 'blur' 
+    }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -123,15 +143,22 @@ const handleLogin = async () => {
     loading.value = true
     
     try {
-      await userStore.login(loginForm)
-      ElMessage.success('登录成功')
-      router.push('/dashboard')
+      // 使用前台用户登录
+      await authStore.login(loginForm)
     } catch (error) {
       ElMessage.error(error.message || '登录失败')
     } finally {
       loading.value = false
     }
   })
+}
+
+const goToRegister = () => {
+  router.push('/register')
+}
+
+const goToAdminLogin = () => {
+  router.push('/admin/login')
 }
 </script>
 
@@ -173,12 +200,18 @@ const handleLogin = async () => {
 }
 
 .login-form {
+  margin-bottom: 20px;
+}
+
+.login-links {
+  text-align: center;
   margin-bottom: 30px;
+  padding: 15px 0;
+  border-bottom: 1px solid #ebeef5;
 }
 
 .demo-accounts {
-  border-top: 1px solid #eee;
-  padding-top: 20px;
+  margin-top: 20px;
 }
 
 .demo-accounts h4 {

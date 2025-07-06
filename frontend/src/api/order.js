@@ -84,3 +84,6 @@ export const orderAPI = {
     return api.post(`/encrypted-orders/${id}/verify`)
   }
 }
+
+export const orderApi = orderAPI
+export default orderAPI

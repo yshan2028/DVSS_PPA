@@ -6,7 +6,7 @@
 import json
 import hashlib
 from typing import List, Dict, Any
-from secretsharing import SecretSharer
+from secretsharing import PlaintextToHexSecretSharer
 from sqlalchemy.orm import Session
 from module_dvss.dao.order_dao import OrderDAO
 from module_dvss.dao.shard_dao import ShardDAO
@@ -25,14 +25,14 @@ class EncryptionService:
         secret = json.dumps(data, ensure_ascii=False)
         
         # 使用秘密共享算法分片
-        shares = SecretSharer.split_secret(secret, k, n)
+        shares = PlaintextToHexSecretSharer.split_secret(secret, k, n)
         
         return shares
     
     def reconstruct_secret(self, shares: List[str]) -> Dict[str, Any]:
         """重构秘密"""
         # 恢复秘密
-        secret = SecretSharer.recover_secret(shares)
+        secret = PlaintextToHexSecretSharer.recover_secret(shares)
         
         # 解析JSON
         return json.loads(secret)

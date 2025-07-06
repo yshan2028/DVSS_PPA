@@ -57,3 +57,7 @@ export const userAPI = {
     return api.get('/users/stats')
   }
 }
+
+// 导出为userApi和userAPI两种命名
+export const userApi = userAPI
+export default userAPI

@@ -1,221 +1,215 @@
-/**
- * 认证状态管理
- */
 import { defineStore } from 'pinia'
+import { ref } from 'vue'
 import { authAPI } from '@/api/auth'
 import { ElMessage } from 'element-plus'
+import router from '@/router'
 
-export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    token: localStorage.getItem('token') || null,
-    user: null,
-    isLoggedIn: false,
-    permissions: [],
-    roles: []
-  }),
+export const useAuthStore = defineStore('auth', () => {
+  // 状态
+  const user = ref(null)
+  const token = ref(localStorage.getItem('token') || '')
+  const isAuthenticated = ref(!!token.value)
+  const isAdmin = ref(false)
 
-  getters: {
-    // 是否已登录
-    isAuthenticated: (state) => !!state.token && !!state.user,
-    
-    // 获取用户角色
-    userRoles: (state) => state.roles,
-    
-    // 获取用户权限
-    userPermissions: (state) => state.permissions,
-    
-    // 检查是否有特定权限
-    hasPermission: (state) => (permission) => {
-      return state.permissions.includes(permission)
-    },
-    
-    // 检查是否有特定角色
-    hasRole: (state) => (role) => {
-      return state.roles.some(r => r.name === role)
-    },
-    
-    // 是否为管理员
-    isAdmin: (state) => state.user?.is_superuser || false,
-    
-    // 获取用户信息
-    userInfo: (state) => state.user
-  },
-
-  actions: {
-    // 登录
-    async login(loginData) {
-      try {
-        const { data } = await authAPI.login(loginData)
-        
-        this.token = data.access_token
-        this.user = data.user
-        this.permissions = data.permissions || []
-        this.roles = data.roles || []
-        this.isLoggedIn = true
-        
-        // 保存到本地存储
-        localStorage.setItem('token', this.token)
-        localStorage.setItem('user', JSON.stringify(this.user))
-        
-        ElMessage.success('登录成功')
-        return { success: true, data }
-      } catch (error) {
-        ElMessage.error(error.message || '登录失败')
-        return { success: false, error }
-      }
-    },
-
-    // 登出
-    async logout() {
-      try {
-        if (this.token) {
-          await authAPI.logout()
-        }
-      } catch (error) {
-        console.warn('登出请求失败:', error)
-      } finally {
-        this.clearAuth()
-        ElMessage.success('已安全登出')
-      }
-    },
-
-    // 清除认证信息
-    clearAuth() {
-      this.token = null
-      this.user = null
-      this.permissions = []
-      this.roles = []
-      this.isLoggedIn = false
+  // 登录
+  const login = async (credentials) => {
+    try {
+      const response = await authAPI.login(credentials)
+      const { token: newToken, user: userData } = response.data
       
+      // 设置token和用户信息
+      token.value = newToken
+      user.value = userData
+      isAuthenticated.value = true
+      
+      // 检查是否为管理员（后台登录）
+      isAdmin.value = userData.role === 'admin'
+      
+      // 存储到localStorage
+      localStorage.setItem('token', newToken)
+      localStorage.setItem('user', JSON.stringify(userData))
+      
+      ElMessage.success('登录成功')
+      
+      // 根据角色跳转到不同页面
+      if (isAdmin.value) {
+        // 管理员跳转到后台
+        router.push('/admin/dashboard')
+      } else {
+        // 普通用户跳转到前台
+        router.push('/')
+      }
+      
+      return response
+    } catch (error) {
+      ElMessage.error(error.response?.data?.message || '登录失败')
+      throw error
+    }
+  }
+
+  // 管理员登录（专门的后台登录）
+  const adminLogin = async (credentials) => {
+    // 验证管理员账号
+    if (credentials.username !== 'admin') {
+      throw new Error('无效的管理员账号')
+    }
+    
+    try {
+      const response = await authAPI.adminLogin(credentials)
+      const { token: newToken, user: userData } = response.data
+      
+      // 确保是管理员角色
+      if (userData.role !== 'admin') {
+        throw new Error('该账号不是管理员')
+      }
+      
+      token.value = newToken
+      user.value = userData
+      isAuthenticated.value = true
+      isAdmin.value = true
+      
+      localStorage.setItem('token', newToken)
+      localStorage.setItem('user', JSON.stringify(userData))
+      
+      ElMessage.success('管理员登录成功')
+      router.push('/admin/dashboard')
+      
+      return response
+    } catch (error) {
+      ElMessage.error(error.response?.data?.message || '管理员登录失败')
+      throw error
+    }
+  }
+
+  // 注册（仅前台用户）
+  const register = async (userData) => {
+    try {
+      // 前台注册的用户默认角色不能是admin
+      if (userData.role === 'admin') {
+        throw new Error('不能注册管理员账号')
+      }
+      
+      const response = await authAPI.register(userData)
+      ElMessage.success('注册成功，请登录')
+      router.push('/login')
+      return response
+    } catch (error) {
+      ElMessage.error(error.response?.data?.message || '注册失败')
+      throw error
+    }
+  }
+
+  // 登出
+  const logout = () => {
+    try {
+      // 清除状态
+      token.value = ''
+      user.value = null
+      isAuthenticated.value = false
+      isAdmin.value = false
+      
+      // 清除localStorage
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-    },
-
-    // 刷新Token
-    async refreshToken() {
-      try {
-        const { data } = await authAPI.refreshToken()
-        this.token = data.access_token
-        localStorage.setItem('token', this.token)
-        return true
-      } catch (error) {
-        console.error('刷新Token失败:', error)
-        this.clearAuth()
-        return false
-      }
-    },
-
-    // 获取用户信息
-    async fetchUserInfo() {
-      try {
-        const { data } = await authAPI.getProfile()
-        this.user = data
-        localStorage.setItem('user', JSON.stringify(this.user))
-        return data
-      } catch (error) {
-        console.error('获取用户信息失败:', error)
-        throw error
-      }
-    },
-
-    // 初始化认证状态
-    initAuth() {
-      const token = localStorage.getItem('token')
-      const user = localStorage.getItem('user')
       
-      if (token && user) {
-        try {
-          this.token = token
-          this.user = JSON.parse(user)
-          this.isLoggedIn = true
-        } catch (error) {
-          console.error('初始化认证状态失败:', error)
-          this.clearAuth()
-        }
-      }
-    }
-  }
-})
-      access_level: 5,
-      permissions: ['read_all', 'audit']
-    },
-    seller: { 
-      username: '卖家', 
-      role: 'seller', 
-      roleName: '卖家',
-      access_level: 3,
-      permissions: ['read_order', 'read_customer', 'read_shipping']
-    },
-    payment_provider: { 
-      username: '支付服务商', 
-      role: 'payment_provider', 
-      roleName: '支付服务商',
-      access_level: 4,
-      permissions: ['read_payment', 'write_payment']
-    },
-    logistics: { 
-      username: '物流', 
-      role: 'logistics', 
-      roleName: '物流',
-      access_level: 2,
-      permissions: ['read_shipping', 'write_shipping']
-    }
-  })
-
-  const login = async (userId) => {
-    try {
-      // 使用新的authAPI，密码与后端一致
-      const result = await authAPI.login(userId, 'admin')
-      
-      if (result.data.success) {
-        const userData = result.data.data
-        // 设置token
-        if (userData.access_token) {
-          localStorage.setItem('token', userData.access_token)
-        }
-        
-        // 设置用户信息，合并预设的角色信息
-        const userInfo = users.value[userId] || {}
-        currentUser.value = {
-          ...userInfo,
-          ...userData,
-          id: userId,
-          username: userInfo.username || userData.username,
-          role: userInfo.role || userData.role,
-          role_name: userInfo.roleName || userData.role_name,
-          access_level: userInfo.access_level || userData.access_level,
-          permissions: userInfo.permissions || userData.permissions || []
-        }
-        isLoggedIn.value = true
-        return { success: true }
-      } else {
-        throw new Error(result.data.message || 'Login failed')
-      }
+      ElMessage.success('已退出登录')
+      router.push('/')
     } catch (error) {
-      console.error('Login error:', error)
-      return { success: false, error: error.message }
+      ElMessage.error('退出登录失败')
     }
   }
 
-  const logout = () => {
-    currentUser.value = null
-    isLoggedIn.value = false
-    localStorage.removeItem('token')
+  // 初始化用户信息
+  const initUser = () => {
+    const storedUser = localStorage.getItem('user')
+    if (storedUser && token.value) {
+      try {
+        user.value = JSON.parse(storedUser)
+        isAuthenticated.value = true
+        isAdmin.value = user.value?.role === 'admin'
+      } catch (error) {
+        // 清除无效数据
+        logout()
+      }
+    }
   }
 
-  const getUserList = () => {
-    return Object.entries(users.value).map(([id, user]) => ({
-      id,
-      ...user
-    }))
+  // 检查权限
+  const hasPermission = (requiredRole) => {
+    if (!user.value) return false
+    
+    // 管理员拥有所有权限
+    if (user.value.role === 'admin') return true
+    
+    // 检查特定角色权限
+    return user.value.role === requiredRole
+  }
+
+  // 获取用户可见字段
+  const getVisibleFields = () => {
+    if (!user.value) return []
+    
+    // 根据用户角色返回可见字段
+    const roleFieldMap = {
+      admin: ['*'], // 管理员可见所有字段
+      merchant: ['order_id', 'customer_name', 'customer_phone', 'customer_email', 'product_name', 'product_price', 'product_quantity', 'payment_method', 'payment_amount', 'payment_status', 'created_at'],
+      logistics: ['order_id', 'customer_name', 'customer_phone', 'shipping_address', 'shipping_method', 'shipping_status', 'product_name', 'product_quantity', 'created_at'],
+      user: ['order_id', 'product_name', 'product_price', 'product_quantity', 'payment_status', 'shipping_status', 'created_at', 'updated_at'],
+      platform: ['order_id', 'customer_name', 'product_name', 'product_price', 'product_quantity', 'payment_amount', 'payment_status', 'shipping_status', 'created_at'],
+      auditor: ['*'] // 审计方可见所有字段
+    }
+    
+    return roleFieldMap[user.value.role] || []
+  }
+
+  // 过滤数据字段（根据用户角色）
+  const filterDataFields = (data) => {
+    const visibleFields = getVisibleFields()
+    
+    // 如果可见所有字段
+    if (visibleFields.includes('*')) {
+      return data
+    }
+    
+    // 过滤字段
+    if (Array.isArray(data)) {
+      return data.map(item => {
+        const filtered = {}
+        visibleFields.forEach(field => {
+          if (item.hasOwnProperty(field)) {
+            filtered[field] = item[field]
+          }
+        })
+        return filtered
+      })
+    } else if (typeof data === 'object' && data !== null) {
+      const filtered = {}
+      visibleFields.forEach(field => {
+        if (data.hasOwnProperty(field)) {
+          filtered[field] = data[field]
+        }
+      })
+      return filtered
+    }
+    
+    return data
   }
 
   return {
-    currentUser,
-    isLoggedIn,
-    users,
+    // 状态
+    user,
+    token,
+    isAuthenticated,
+    isAdmin,
+    
+    // 方法
     login,
+    adminLogin,
+    register,
     logout,
-    getUserList
+    initUser,
+    hasPermission,
+    getVisibleFields,
+    filterDataFields
   }
 })

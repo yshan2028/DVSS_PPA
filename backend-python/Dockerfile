@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y \
 # 复制依赖文件
 COPY requirements.txt .
 
+# 升级pip并安装setuptools
+RUN pip install --upgrade pip setuptools
+
 # 安装Python依赖
 RUN pip install --no-cache-dir -r requirements.txt
 

@@ -8,11 +8,11 @@ from sqlalchemy.orm import Session
 
 from module_dvss.service.dvss_service import DVSSService
 from module_dvss.schemas.order_schema import (
-    OrderQueryRequest, OrderDeleteRequest, OrderResponse
+    OrderResponse
 )
-from module_dvss.schemas.common_schema import ApiResponse, PageRequest
+from module_dvss.schemas.common_schema import ApiResponse, PaginationRequest
 from core.deps import get_db, get_current_user
-from utils.response_util import success_response, error_response
+from utils.response_util import ResponseUtil
 from exceptions.custom_exception import NotFoundError, ValidationError, AuthorizationError
 from utils.log_util import LogUtil
 
@@ -20,7 +20,7 @@ logger = LogUtil.get_logger("dvss_controller")
 router = APIRouter(prefix="/api/v1/dvss", tags=["DVSS核心"])
 
 
-@router.post("/upload", response_model=ApiResponse[Dict[str, Any]])
+@router.post("/upload")
 async def upload_orders(
     file: UploadFile = File(..., description="订单文件"),
     db: Session = Depends(get_db),
@@ -47,20 +47,20 @@ async def upload_orders(
             current_user_id=current_user.id
         )
         
-        return success_response(data=result, message="订单上传成功")
+        return ResponseUtil.success(data=result, message="订单上传成功")
         
     except ValidationError as e:
-        return error_response(message=str(e), code=400)
+        return ResponseUtil.error(message=str(e), code=400)
     except AuthorizationError as e:
-        return error_response(message=str(e), code=403)
+        return ResponseUtil.error(message=str(e), code=403)
     except Exception as e:
         logger.error(f"订单上传失败: {str(e)}")
-        return error_response(message=f"订单上传失败: {str(e)}")
+        return ResponseUtil.error(message=f"订单上传失败: {str(e)}")
 
 
-@router.post("/query", response_model=ApiResponse[Dict[str, Any]])
+@router.post("/query")
 async def query_orders(
-    request: OrderQueryRequest,
+    request: dict,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
@@ -72,18 +72,18 @@ async def query_orders(
             current_user_id=current_user.id
         )
         
-        return success_response(data=result.dict(), message="查询成功")
+        return ResponseUtil.success(data=result.dict(), message="查询成功")
         
     except AuthorizationError as e:
-        return error_response(message=str(e), code=403)
+        return ResponseUtil.error(message=str(e), code=403)
     except Exception as e:
         logger.error(f"订单查询失败: {str(e)}")
-        return error_response(message=f"订单查询失败: {str(e)}")
+        return ResponseUtil.error(message=f"订单查询失败: {str(e)}")
 
 
-@router.delete("/orders", response_model=ApiResponse[Dict[str, Any]])
+@router.delete("/orders")
 async def delete_orders(
-    request: OrderDeleteRequest,
+    request: dict,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
@@ -95,18 +95,18 @@ async def delete_orders(
             current_user_id=current_user.id
         )
         
-        return success_response(data=result, message="订单删除成功")
+        return ResponseUtil.success(data=result, message="订单删除成功")
         
     except AuthorizationError as e:
-        return error_response(message=str(e), code=403)
+        return ResponseUtil.error(message=str(e), code=403)
     except NotFoundError as e:
-        return error_response(message=str(e), code=404)
+        return ResponseUtil.error(message=str(e), code=404)
     except Exception as e:
         logger.error(f"订单删除失败: {str(e)}")
-        return error_response(message=f"订单删除失败: {str(e)}")
+        return ResponseUtil.error(message=f"订单删除失败: {str(e)}")
 
 
-@router.get("/statistics", response_model=ApiResponse[Dict[str, Any]])
+@router.get("/statistics")
 async def get_statistics(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
@@ -116,17 +116,17 @@ async def get_statistics(
         dvss_service = DVSSService(db)
         stats = await dvss_service.get_statistics(current_user_id=current_user.id)
         
-        return success_response(data=stats, message="获取统计信息成功")
+        return ResponseUtil.success(data=stats, message="获取统计信息成功")
         
     except Exception as e:
         logger.error(f"获取统计信息失败: {str(e)}")
-        return error_response(message=f"获取统计信息失败: {str(e)}")
+        return ResponseUtil.error(message=f"获取统计信息失败: {str(e)}")
 
 
-@router.get("/health", response_model=ApiResponse[Dict[str, Any]])
+@router.get("/health")
 async def health_check():
     """健康检查"""
-    return success_response(
+    return ResponseUtil.success(
         data={
             "status": "healthy",
             "service": "DVSS Core",

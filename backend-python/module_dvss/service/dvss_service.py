@@ -11,19 +11,19 @@ import json
 import asyncio
 
 from module_dvss.dao.order_dao import OrderDAO
-from module_dvss.dao.shard_dao import ShardDao
+from module_dvss.dao.shard_dao import ShardDAO
 from module_dvss.dao.user_dao import UserDAO
-from module_dvss.dao.field_dao import FieldDao
-from module_dvss.dao.log_dao import LogDao
+from module_dvss.dao.field_dao import FieldDAO
+from module_dvss.dao.log_dao import LogDAO
 from module_dvss.service.encryption_service import EncryptionService
 from module_dvss.service.sensitivity_service import SensitivityService
 from module_dvss.service.audit_service import AuditService
 from module_dvss.schemas.order_schema import (
-    OrderCreateRequest, OrderResponse, OrderQueryRequest,
-    OrderDeleteRequest, OrderBatchRequest
+    OrderCreate, OrderResponse, OrderList,
+    OrderBatchEncrypt, OrderEncrypt
 )
-from module_dvss.schemas.shard_schema import ShardCreateRequest, ShardResponse
-from module_dvss.schemas.common_schema import PageRequest, PageResponse
+from module_dvss.schemas.shard_schema import ShardInfoCreate, ShardInfoResponse
+from module_dvss.schemas.common_schema import PaginationRequest, PaginatedResponse
 from module_dvss.entity.original_order import OriginalOrder
 from module_dvss.entity.encrypted_order import EncryptedOrder
 from module_dvss.entity.shard_info import ShardInfo
@@ -39,10 +39,10 @@ class DVSSService:
     def __init__(self, db: Session):
         self.db = db
         self.order_dao = OrderDAO(db)
-        self.shard_dao = ShardDao(db)
+        self.shard_dao = ShardDAO(db)
         self.user_dao = UserDAO(db)
-        self.field_dao = FieldDao(db)
-        self.log_dao = LogDao(db)
+        self.field_dao = FieldDAO(db)
+        self.log_dao = LogDAO(db)
         self.encryption_service = EncryptionService(db)
         self.sensitivity_service = SensitivityService(db)
         self.audit_service = AuditService(db)
@@ -115,7 +115,7 @@ class DVSSService:
             )
             raise
     
-    async def query_orders(self, request: OrderQueryRequest, current_user_id: int) -> PageResponse:
+    async def query_orders(self, request: dict, current_user_id: int) -> dict:
         """
         查询订单
         
@@ -149,7 +149,7 @@ class DVSSService:
                 result_count=len(orders)
             )
             
-            return PageResponse(
+            return PaginatedResponse(
                 items=decrypted_orders,
                 total=total,
                 page=request.page.page,
@@ -160,7 +160,7 @@ class DVSSService:
             logger.error(f"订单查询失败: {str(e)}")
             raise
     
-    async def delete_orders(self, request: OrderDeleteRequest, current_user_id: int) -> Dict[str, Any]:
+    async def delete_orders(self, request: dict, current_user_id: int) -> Dict[str, Any]:
         """
         删除订单
         
@@ -285,7 +285,7 @@ class DVSSService:
         for i in range(0, len(encrypted_orders), shard_size):
             shard_data = encrypted_orders[i:i + shard_size]
             
-            shard_request = ShardCreateRequest(
+            shard_request = ShardInfoCreate(
                 order_ids=[order['order_id'] for order in shard_data],
                 shard_type="data",
                 metadata={
@@ -304,7 +304,7 @@ class DVSSService:
         saved_orders = []
         
         for order_data in encrypted_orders:
-            order_request = OrderCreateRequest(
+            order_request = OrderCreate(
                 order_id=order_data['order_id'],
                 encrypted_data=order_data,
                 user_id=user_id
@@ -315,7 +315,7 @@ class DVSSService:
         
         return saved_orders
     
-    async def _check_query_permission(self, request: OrderQueryRequest, user_id: int):
+    async def _check_query_permission(self, request: dict, user_id: int):
         """检查查询权限"""
         user = await self.user_dao.get_user_by_id(user_id)
         if not user:
