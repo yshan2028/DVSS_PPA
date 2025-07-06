@@ -1,41 +1,43 @@
-# 多阶段构建 - 构建阶段
-FROM node:18-alpine as build-stage
+############################################################
+# 构建阶段（Stage 1）：使用 Node 镜像安装依赖并打包前端代码
+############################################################
+FROM node:18-alpine AS build
 
+# 设置工作目录
 WORKDIR /app
 
-# 复制 package.json 和 package-lock.json
+# 仅复制依赖清单文件，利用 Docker 层级缓存
 COPY package*.json ./
 
-# 安装依赖
+# 安装项目依赖（npm ci = 干净安装，速度更快）
 RUN npm ci
 
-# 复制源代码 (排除 node_modules)
+# 复制其余源代码（确保 .dockerignore 已排除 node_modules 等）
 COPY . .
 
-# 清理可能存在的 node_modules 并重新安装依赖
-RUN rm -rf node_modules && npm ci
-
-# 构建生产版本
+# 生产环境构建
 RUN npm run build
 
-# 生产阶段
-FROM nginx:alpine as production-stage
+############################################################
+# 运行阶段（Stage 2）：使用轻量级 Nginx 镜像托管静态文件
+############################################################
+FROM nginx:alpine
 
 # 安装 curl 用于健康检查
 RUN apk add --no-cache curl
 
-# 复制构建文件到 nginx
-COPY --from=build-stage /app/dist /usr/share/nginx/html
-
-# 复制自定义 nginx 配置
+# 拷贝自定义 Nginx 配置，覆盖默认配置
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# 暴露端口
+# 将前端构建产物复制到 Nginx 默认静态目录
+COPY --from=build /app/dist/ /usr/share/nginx/html/
+
+# 暴露服务端口
 EXPOSE 80
 
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost/ || exit 1
+# 健康检查：访问 Nginx 中已固定返回 200 的 /health 路由
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+  CMD curl -f http://localhost/health || exit 1
 
-# 启动 nginx
+# 以“前景模式”启动 Nginx
 CMD ["nginx", "-g", "daemon off;"]

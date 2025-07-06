@@ -4,6 +4,8 @@ import (
 	"dvss-ppa-go-backend/api"
 	"dvss-ppa-go-backend/config"
 	"dvss-ppa-go-backend/pkg/fabric"
+	"dvss-ppa-go-backend/pkg/middleware"
+	"dvss-ppa-go-backend/pkg/utils"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,7 +21,7 @@ func main() {
 	}
 
 	// 初始化 Fabric 客户端（可选）
-	if err := fabric.InitFabric(); err != nil {
+	if err := fabric.InitClient(); err != nil {
 		log.Printf("Fabric客户端初始化警告：%v", err)
 		// 继续运行，某些功能可能不可用
 	}
@@ -28,79 +30,75 @@ func main() {
 	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
 
-	// 配置CORS中间件
-	r.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "*")
-		c.Header("Access-Control-Allow-Credentials", "true")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	})
+	// 配置中间件
+	r.Use(middleware.CORSMiddleware())
+	r.Use(middleware.RequestLoggerMiddleware())
 
 	// 健康检查端点
 	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
+		utils.SuccessResponse(c, "服务健康", gin.H{
 			"status":  "healthy",
 			"service": "DVSS Go Backend",
 			"version": "1.0.0",
 		})
 	})
 
+	// Prometheus metrics端点
+	r.GET("/metrics", func(c *gin.Context) {
+		c.String(http.StatusOK, `# HELP dvss_go_backend_health Health status of DVSS Go Backend
+# TYPE dvss_go_backend_health gauge
+dvss_go_backend_health 1
+# HELP dvss_go_backend_version Version info
+# TYPE dvss_go_backend_version gauge
+dvss_go_backend_version{version="1.0.0"} 1
+`)
+	})
+
 	// API路由组
 	apiGroup := r.Group("/api/v1")
 
-	// 注册处理器
-	dvssHandler := api.NewDVSSHandler()
-
-	// 区块链相关接口
-	blockchain := apiGroup.Group("/blockchain")
+	// 注册Fabric相关的处理器
+	fabricGroup := apiGroup.Group("/fabric")
+	fabricGroup.Use(middleware.OptionalAuthMiddleware())
 	{
-		// 记录操作到区块链
-		blockchain.POST("/record", dvssHandler.RecordToBlockchain)
-		// 查询区块链交易
-		blockchain.GET("/transaction/:txId", dvssHandler.QueryTransaction)
-		// 查询区块列表
-		blockchain.GET("/blocks", dvssHandler.QueryBlockList)
-		// 查询链码调用历史
-		blockchain.GET("/chaincode/history", dvssHandler.QueryChaincodeHistory)
+		// 注册审计日志处理器
+		auditHandler := api.NewAuditHandler()
+		auditHandler.RegisterRoutes(fabricGroup)
+
+		// 注册加密日志处理器
+		encryptionHandler := api.NewEncryptionHandler()
+		encryptionHandler.RegisterRoutes(fabricGroup)
+
+		// 注册解密日志处理器
+		decryptionHandler := api.NewDecryptionHandler()
+		decryptionHandler.RegisterRoutes(fabricGroup)
+
+		// 注册查询日志处理器
+		queryHandler := api.NewQueryHandler()
+		queryHandler.RegisterRoutes(fabricGroup)
 	}
 
-	// DVSS 核心接口（与Python后端交互）
-	dvss := apiGroup.Group("/dvss")
+	// 需要认证的路由组
+	authGroup := apiGroup.Group("/secure")
+	authGroup.Use(middleware.AuthMiddleware())
 	{
-		// 分片上链
-		dvss.POST("/shard/upload", dvssHandler.UploadShardToBlockchain)
-		// 查询分片信息
-		dvss.GET("/shard/:shardId", dvssHandler.QueryShardFromBlockchain)
-		// 验证分片完整性
-		dvss.POST("/shard/verify", dvssHandler.VerifyShardIntegrity)
-		// 审计日志上链
-		dvss.POST("/audit/upload", dvssHandler.UploadAuditLog)
-	}
-
-	// Fabric网络管理接口
-	network := apiGroup.Group("/network")
-	{
-		// 网络状态
-		network.GET("/status", dvssHandler.GetNetworkStatus)
-		// 节点信息
-		network.GET("/peers", dvssHandler.GetPeerInfo)
-		// 通道信息
-		network.GET("/channels", dvssHandler.GetChannelInfo)
+		// 这里可以添加需要认证的特殊接口
+		authGroup.GET("/status", func(c *gin.Context) {
+			userID := c.GetString("user_id")
+			utils.SuccessResponse(c, "认证成功", gin.H{
+				"user_id": userID,
+				"message": "您已通过认证",
+			})
+		})
 	}
 
 	// 启动服务器
 	port := 8001
 	addr := fmt.Sprintf(":%d", port)
-	log.Printf("Go backend server starting on %s", addr)
+	utils.LogInfof("Go backend server starting on %s", addr)
 
 	if err := r.Run(addr); err != nil {
+		utils.LogErrorf("服务器启动失败：%v", err)
 		log.Fatalf("服务器启动失败：%v", err)
 	}
 }

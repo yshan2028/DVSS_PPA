@@ -1,17 +1,22 @@
+/**
+ * API请求配置
+ */
 import axios from 'axios'
+import { ElMessage } from 'element-plus'
+import router from '@/router'
 
 // Python后端API (端口8000)
 const pythonAPI = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_PYTHON_API_BASE_URL || '/api/v1',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   }
 })
 
-// Go后端API (端口8001) - 专门处理Fabric
+// Go后端API (端口8080) - 专门处理Fabric
 const goAPI = axios.create({
-  baseURL: '/fabric-api',
+  baseURL: import.meta.env.VITE_GO_API_BASE_URL || '/fabric-api/v1',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',

@@ -23,7 +23,7 @@ logger = logging.getLogger('ETL-Service')
 class ETLProcessor:
     def __init__(self):
         self.pg_url = os.getenv('DATABASE_URL', 'postgresql://dvss:dvss123@postgres:5432/dvss_db')
-        self.mongo_url = os.getenv('MONGODB_URL', 'mongodb://dvss:dvss123@mongo:27017')
+        self.mongo_url = os.getenv('MONGODB_URL', 'mongodb://mongo:27017')  # 移除认证信息
         self.redis_host = os.getenv('REDIS_HOST', 'redis')
         
         self.pg_pool = None
@@ -56,8 +56,8 @@ class ETLProcessor:
             async with self.pg_pool.acquire() as conn:
                 # 获取最近一小时的订单数据
                 query = """
-                SELECT id, order_id, customer_name, order_amount, 
-                       sensitivity_level, created_at
+                SELECT id, order_id, customer_name, total_amount, 
+                       sensitivity_score, sensitivity_level, created_at
                 FROM orders 
                 WHERE created_at > $1
                 """
@@ -71,8 +71,8 @@ class ETLProcessor:
                         doc = {
                             'order_id': row['order_id'],
                             'customer_name': row['customer_name'],
-                            'order_amount': float(row['order_amount']) if row['order_amount'] else 0,
-                            'sensitivity_level': row['sensitivity_level'],
+                            'order_amount': float(row['total_amount']) if row['total_amount'] else 0,
+                            'sensitivity_level': row['sensitivity_level'] or 'unknown',
                             'processed_at': datetime.now(),
                             'source': 'postgres_etl'
                         }

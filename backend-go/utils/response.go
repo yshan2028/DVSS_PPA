@@ -2,52 +2,117 @@ package utils
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-// Response 通用响应结构
-type Response struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
-	Success bool        `json:"success"`
+// APIResponse 标准API响应结构
+type APIResponse struct {
+	Success   bool        `json:"success"`
+	Message   string      `json:"message"`
+	Data      interface{} `json:"data,omitempty"`
+	Error     string      `json:"error,omitempty"`
+	Code      int         `json:"code"`
+	Timestamp string      `json:"timestamp"`
 }
 
-// Success 成功响应
-func Success(c *gin.Context, data interface{}) {
-	c.JSON(http.StatusOK, Response{
-		Code:    200,
-		Message: "success",
-		Data:    data,
-		Success: true,
+// PaginatedResponse 分页响应结构
+type PaginatedResponse struct {
+	Success   bool        `json:"success"`
+	Message   string      `json:"message"`
+	Data      interface{} `json:"data"`
+	Total     int64       `json:"total"`
+	Page      int         `json:"page"`
+	PageSize  int         `json:"page_size"`
+	Timestamp string      `json:"timestamp"`
+}
+
+// SuccessResponse 成功响应
+func SuccessResponse(c *gin.Context, message string, data interface{}) {
+	c.JSON(http.StatusOK, APIResponse{
+		Success:   true,
+		Message:   message,
+		Data:      data,
+		Code:      http.StatusOK,
+		Timestamp: time.Now().Format(time.RFC3339),
 	})
 }
 
-// SuccessWithMessage 成功响应带消息
-func SuccessWithMessage(c *gin.Context, message string, data interface{}) {
-	c.JSON(http.StatusOK, Response{
-		Code:    200,
-		Message: message,
-		Data:    data,
-		Success: true,
+// ErrorResponse 错误响应
+func ErrorResponse(c *gin.Context, code int, message string, err error) {
+	errorMsg := ""
+	if err != nil {
+		errorMsg = err.Error()
+	}
+	
+	c.JSON(code, APIResponse{
+		Success:   false,
+		Message:   message,
+		Error:     errorMsg,
+		Code:      code,
+		Timestamp: time.Now().Format(time.RFC3339),
 	})
 }
 
-// SuccessWithData 成功响应只返回数据
-func SuccessWithData(c *gin.Context, data interface{}) {
-	c.JSON(http.StatusOK, Response{
-		Code:    200,
-		Message: "success",
-		Data:    data,
-		Success: true,
+// PaginatedSuccessResponse 分页成功响应
+func PaginatedSuccessResponse(c *gin.Context, message string, data interface{}, total int64, page, pageSize int) {
+	c.JSON(http.StatusOK, PaginatedResponse{
+		Success:   true,
+		Message:   message,
+		Data:      data,
+		Total:     total,
+		Page:      page,
+		PageSize:  pageSize,
+		Timestamp: time.Now().Format(time.RFC3339),
 	})
 }
 
-// BadRequest 请求错误
-func BadRequest(c *gin.Context, message string) {
-	c.JSON(http.StatusBadRequest, Response{
-		Code:    400,
+// ValidationErrorResponse 验证错误响应
+func ValidationErrorResponse(c *gin.Context, message string, validationErrors interface{}) {
+	c.JSON(http.StatusBadRequest, APIResponse{
+		Success:   false,
+		Message:   message,
+		Data:      validationErrors,
+		Code:      http.StatusBadRequest,
+		Timestamp: time.Now().Format(time.RFC3339),
+	})
+}
+
+// UnauthorizedResponse 未授权响应
+func UnauthorizedResponse(c *gin.Context, message string) {
+	c.JSON(http.StatusUnauthorized, APIResponse{
+		Success:   false,
+		Message:   message,
+		Code:      http.StatusUnauthorized,
+		Timestamp: time.Now().Format(time.RFC3339),
+	})
+}
+
+// ForbiddenResponse 禁止访问响应
+func ForbiddenResponse(c *gin.Context, message string) {
+	c.JSON(http.StatusForbidden, APIResponse{
+		Success:   false,
+		Message:   message,
+		Code:      http.StatusForbidden,
+		Timestamp: time.Now().Format(time.RFC3339),
+	})
+}
+
+// NotFoundResponse 未找到响应
+func NotFoundResponse(c *gin.Context, message string) {
+	c.JSON(http.StatusNotFound, APIResponse{
+		Success:   false,
+		Message:   message,
+		Code:      http.StatusNotFound,
+		Timestamp: time.Now().Format(time.RFC3339),
+	})
+}
+
+// InternalServerErrorResponse 服务器内部错误响应
+func InternalServerErrorResponse(c *gin.Context, message string, err error) {
+	ErrorResponse(c, http.StatusInternalServerError, message, err)
+}
 		Message: message,
 		Data:    nil,
 		Success: false,

@@ -51,25 +51,30 @@
       <div class="demo-accounts">
         <h4>演示账户</h4>
         <div class="account-grid">
-          <div class="account-card" @click="fillAccount('admin', 'admin123')">
-            <strong>管理员</strong>
-            <p>用户名: admin</p>
-            <p>所有权限</p>
+          <div class="account-card" @click="fillAccount('platform', 'admin')">
+            <strong>平台管理</strong>
+            <p>用户名: platform</p>
+            <p>平台管理权限</p>
           </div>
-          <div class="account-card" @click="fillAccount('analyst', 'analyst123')">
-            <strong>数据分析师</strong>
-            <p>用户名: analyst</p>
-            <p>数据分析权限</p>
+          <div class="account-card" @click="fillAccount('auditor', 'admin')">
+            <strong>审计人员</strong>
+            <p>用户名: auditor</p>
+            <p>审计查看权限</p>
           </div>
-          <div class="account-card" @click="fillAccount('viewer', 'viewer123')">
-            <strong>查看者</strong>
-            <p>用户名: viewer</p>
-            <p>仅查看权限</p>
+          <div class="account-card" @click="fillAccount('seller', 'admin')">
+            <strong>卖家</strong>
+            <p>用户名: seller</p>
+            <p>订单客户权限</p>
           </div>
-          <div class="account-card" @click="fillAccount('finance', 'finance123')">
-            <strong>财务人员</strong>
-            <p>用户名: finance</p>
-            <p>财务数据权限</p>
+          <div class="account-card" @click="fillAccount('payment_provider', 'admin')">
+            <strong>支付服务商</strong>
+            <p>用户名: payment_provider</p>
+            <p>支付数据权限</p>
+          </div>
+          <div class="account-card" @click="fillAccount('logistics', 'admin')">
+            <strong>物流</strong>
+            <p>用户名: logistics</p>
+            <p>物流配送权限</p>
           </div>
         </div>
       </div>
@@ -187,6 +192,13 @@ const handleLogin = async () => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+}
+
+/* 当屏幕较小时，调整为单列 */
+@media (max-width: 480px) {
+  .account-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .account-card {

@@ -1,29 +1,23 @@
 """
-数据分片服务层 (Service)
-处理分片相关的业务逻辑
+数据分片服务层
+Service Layer - 处理分片相关的业务逻辑
 """
 
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from datetime import datetime
-import hashlib
-import requests
-import base64
 
-from module_dvss.dao.shard_dao import ShardDao, ShardPermissionDao, AccessLogDao
-from module_dvss.entity.do.shard_do import DataShard, ShardPermission, AccessLog
-from module_dvss.entity.vo.shard_vo import (
-    ShardCreateRequest, ShardUploadRequest, ShardUpdateRequest,
-    ShardReconstructRequest, ShardPermissionRequest, ShardDetailResponse,
-    ShardBaseResponse, ShardListResponse, ShardStatsResponse,
-    ShardReconstructResponse, AccessLogResponse, ShardIntegrityCheckResponse
+from module_dvss.dao.shard_dao import ShardDao
+from module_dvss.dao.user_dao import UserDao
+from module_dvss.schemas.shard_schema import (
+    ShardCreateRequest, ShardUpdateRequest, ShardResponse,
+    ShardListResponse, ShardStatsResponse, ShardDetailResponse
 )
-from exceptions.custom_exception import (
-    NotFoundError, ConflictError, BusinessError, AuthorizationError,
-    ValidationError, ShardError, ReconstructionError, ZKPError
-)
-from utils.log_util import LogUtil, audit_logger
-from core.config import settings
+from module_dvss.schemas.common_schema import PageRequest, PageResponse
+from module_dvss.entity.shard_info import ShardInfo
+from exceptions.custom_exception import NotFoundError, ConflictError, ValidationError, AuthorizationError
+from utils.log_util import LogUtil
+from utils.crypto_util import CryptoUtil
 
 logger = LogUtil.get_logger("shard_service")
 
@@ -33,307 +27,454 @@ class ShardService:
     def __init__(self, db: Session):
         self.db = db
         self.shard_dao = ShardDao(db)
-        self.permission_dao = ShardPermissionDao(db)
-        self.access_log_dao = AccessLogDao(db)
+        self.user_dao = UserDao(db)
+        self.crypto_util = CryptoUtil()
     
-    def create_shard(self, shard_request: ShardCreateRequest, owner_id: int) -> ShardDetailResponse:
+    async def create_shard(self, request: ShardCreateRequest, current_user_id: int) -> ShardResponse:
         """
         创建数据分片
         
         Args:
-            shard_request: 分片创建请求
-            owner_id: 所有者ID
+            request: 分片创建请求
+            current_user_id: 当前用户ID
             
         Returns:
-            ShardDetailResponse: 分片详细信息
+            ShardResponse: 分片响应数据
             
         Raises:
             ValidationError: 数据验证失败
             ConflictError: 分片已存在
         """
         try:
-            # 准备分片数据
-            shard_data = shard_request.dict()
-            shard_data['owner_id'] = owner_id
-            shard_data['status'] = 'active'
-            shard_data['version'] = 1
-            shard_data['access_count'] = 0
+            logger.info(f"用户 {current_user_id} 开始创建分片")
             
-            # 生成唯一的分片ID (如果没有提供)
-            if 'shard_id' not in shard_data or not shard_data['shard_id']:
-                shard_data['shard_id'] = self._generate_shard_id(
-                    shard_request.original_file_hash, 
-                    owner_id
-                )
+            # 验证用户权限
+            user = await self.user_dao.get_user_by_id(current_user_id)
+            if not user:
+                raise AuthorizationError("用户不存在")
             
-            # 创建分片
-            shard = self.shard_dao.create_shard(shard_data)
+            # 验证订单是否存在
+            # TODO: 添加订单验证逻辑
             
-            # 记录审计日志
-            audit_logger.log_data_access("CREATE_SHARD", owner_id, shard.shard_id, "success", {
-                "file_name": shard.original_file_name,
-                "total_shards": shard.total_shards,
-                "threshold": shard.threshold
-            })
+            # 生成分片ID
+            shard_id = self._generate_shard_id(request.order_id, request.shard_index)
             
-            logger.info(f"Shard created successfully: {shard.shard_id}")
+            # 计算分片哈希值
+            hash_value = self._calculate_shard_hash(request.data_content)
             
-            return ShardDetailResponse.from_orm(shard)
-            
-        except (ValidationError, ConflictError):
-            raise
-        except Exception as e:
-            logger.error(f"Error creating shard: {e}")
-            raise BusinessError(f"创建分片失败: {str(e)}")
-    
-    def upload_shard_data(self, upload_request: ShardUploadRequest, user_id: int) -> bool:
-        """
-        上传分片数据
-        
-        Args:
-            upload_request: 分片上传请求
-            user_id: 用户ID
-            
-        Returns:
-            bool: 上传成功返回True
-            
-        Raises:
-            NotFoundError: 分片不存在
-            AuthorizationError: 权限不足
-            ShardError: 分片操作失败
-        """
-        try:
-            # 获取分片信息
-            shard = self.shard_dao.get_shard_by_shard_id(upload_request.shard_id)
-            if not shard:
-                raise NotFoundError("分片不存在")
-            
-            # 权限检查
-            if not self._check_shard_permission(shard.id, user_id, 'write'):
-                raise AuthorizationError("权限不足")
-            
-            # 验证分片哈希
-            decoded_data = base64.b64decode(upload_request.shard_data)
-            calculated_hash = hashlib.sha256(decoded_data).hexdigest()
-            
-            if calculated_hash != upload_request.shard_hash:
-                raise ValidationError("分片数据哈希验证失败")
-            
-            # 更新分片信息
-            update_data = {
-                'shard_hash': upload_request.shard_hash,
-                'shard_size': upload_request.shard_size,
-                'storage_node': upload_request.storage_node,
-                'zkp_proof': upload_request.zkp_proof,
-                'status': 'active'
+            # 创建分片数据
+            shard_data = {
+                "shard_id": shard_id,
+                "order_id": request.order_id,
+                "shard_index": request.shard_index,
+                "total_shards": request.total_shards,
+                "data_content": request.data_content,
+                "encryption_algorithm": request.encryption_algorithm,
+                "hash_value": hash_value,
+                "size": len(request.data_content.encode('utf-8')) if request.data_content else 0,
+                "status": "pending",
+                "created_by": current_user_id,
+                "created_at": datetime.utcnow()
             }
             
-            # 如果有ZKP证明，验证它
-            if upload_request.zkp_proof:
-                if not self._verify_zkp_proof(upload_request.zkp_proof, decoded_data):
-                    raise ZKPError("零知识证明验证失败")
+            # 创建分片
+            shard = await self.shard_dao.create_shard(shard_data)
             
-            self.shard_dao.update_shard(shard.id, update_data)
+            logger.info(f"分片 {shard_id} 创建成功")
             
-            # 记录访问日志
-            self._log_access(shard.id, user_id, "UPLOAD_DATA", "success", {
-                "shard_size": upload_request.shard_size,
-                "storage_node": upload_request.storage_node
-            })
+            return ShardResponse(
+                id=shard.id,
+                shard_id=shard.shard_id,
+                order_id=shard.order_id,
+                shard_index=shard.shard_index,
+                total_shards=shard.total_shards,
+                status=shard.status,
+                encryption_algorithm=shard.encryption_algorithm,
+                hash_value=shard.hash_value,
+                size=shard.size,
+                created_at=shard.created_at,
+                updated_at=shard.updated_at
+            )
             
-            logger.info(f"Shard data uploaded successfully: {shard.shard_id}")
-            
-            return True
-            
-        except (NotFoundError, AuthorizationError, ValidationError, ZKPError):
-            raise
         except Exception as e:
-            logger.error(f"Error uploading shard data: {e}")
-            raise ShardError(f"上传分片数据失败: {str(e)}")
+            logger.error(f"创建分片失败: {str(e)}")
+            raise
     
-    def get_shard_by_id(self, shard_id: str, user_id: int) -> ShardDetailResponse:
+    async def get_shard_by_id(self, shard_id: str, current_user_id: int) -> ShardDetailResponse:
         """
-        根据分片ID获取分片信息
+        根据ID获取分片详情
         
         Args:
             shard_id: 分片ID
-            user_id: 用户ID
+            current_user_id: 当前用户ID
             
         Returns:
-            ShardDetailResponse: 分片详细信息
+            ShardDetailResponse: 分片详情数据
             
         Raises:
             NotFoundError: 分片不存在
-            AuthorizationError: 权限不足
+            AuthorizationError: 无权限访问
         """
         try:
-            shard = self.shard_dao.get_shard_by_shard_id(shard_id)
+            # 获取分片信息
+            shard = await self.shard_dao.get_shard_by_id(shard_id)
             if not shard:
                 raise NotFoundError("分片不存在")
             
-            # 权限检查
-            if not self._check_shard_permission(shard.id, user_id, 'read'):
-                raise AuthorizationError("权限不足")
-            
-            # 更新访问时间和计数
-            self.shard_dao.update_access_time(shard.id)
+            # 检查访问权限
+            await self._check_shard_access_permission(shard, current_user_id)
             
             # 记录访问日志
-            self._log_access(shard.id, user_id, "GET_SHARD", "success")
+            await self._log_shard_access(shard.id, current_user_id, "view")
             
-            return ShardDetailResponse.from_orm(shard)
+            return ShardDetailResponse(
+                id=shard.id,
+                shard_id=shard.shard_id,
+                order_id=shard.order_id,
+                shard_index=shard.shard_index,
+                total_shards=shard.total_shards,
+                status=shard.status,
+                encryption_algorithm=shard.encryption_algorithm,
+                hash_value=shard.hash_value,
+                size=shard.size,
+                processing_node=shard.processing_node,
+                error_message=shard.error_message,
+                created_by=shard.created_by,
+                created_at=shard.created_at,
+                updated_at=shard.updated_at
+            )
             
-        except (NotFoundError, AuthorizationError):
-            raise
         except Exception as e:
-            logger.error(f"Error getting shard {shard_id}: {e}")
-            raise BusinessError(f"获取分片失败: {str(e)}")
+            logger.error(f"获取分片详情失败: {str(e)}")
+            raise
     
-    def list_shards(self, page: int = 1, page_size: int = 20, 
-                   filters: Optional[Dict[str, Any]] = None, 
-                   user_id: int = None) -> ShardListResponse:
+    async def get_shard_list(
+        self, 
+        page_request: PageRequest,
+        order_id: Optional[str] = None,
+        status: Optional[str] = None,
+        created_by: Optional[int] = None,
+        current_user_id: int = None
+    ) -> ShardListResponse:
         """
         获取分片列表
         
         Args:
-            page: 页码
-            page_size: 每页大小
-            filters: 过滤条件
-            user_id: 用户ID
+            page_request: 分页请求
+            order_id: 订单ID筛选
+            status: 状态筛选
+            created_by: 创建者筛选
+            current_user_id: 当前用户ID
             
         Returns:
             ShardListResponse: 分片列表响应
         """
         try:
-            # 获取分片列表 (只返回用户有权限的分片)
-            shards, total, page, page_size = self.shard_dao.list_shards(
-                page, page_size, filters, user_id
+            # 构建筛选条件
+            filters = {}
+            if order_id:
+                filters['order_id'] = order_id
+            if status:
+                filters['status'] = status
+            if created_by:
+                filters['created_by'] = created_by
+            
+            # 获取分片列表
+            shards, total = await self.shard_dao.get_shard_list(
+                page=page_request.page,
+                size=page_request.size,
+                filters=filters
             )
             
-            # 转换为响应对象
-            shard_responses = [ShardBaseResponse.from_orm(shard) for shard in shards]
+            # 转换为响应格式
+            shard_list = []
+            for shard in shards:
+                shard_list.append(ShardResponse(
+                    id=shard.id,
+                    shard_id=shard.shard_id,
+                    order_id=shard.order_id,
+                    shard_index=shard.shard_index,
+                    total_shards=shard.total_shards,
+                    status=shard.status,
+                    encryption_algorithm=shard.encryption_algorithm,
+                    hash_value=shard.hash_value,
+                    size=shard.size,
+                    created_at=shard.created_at,
+                    updated_at=shard.updated_at
+                ))
             
             return ShardListResponse(
+                items=shard_list,
                 total=total,
-                page=page,
-                page_size=page_size,
-                items=shard_responses
+                page=page_request.page,
+                size=page_request.size
             )
             
         except Exception as e:
-            logger.error(f"Error listing shards: {e}")
-            raise BusinessError(f"获取分片列表失败: {str(e)}")
+            logger.error(f"获取分片列表失败: {str(e)}")
+            raise
     
-    def _check_shard_permission(self, shard_id: int, user_id: int, permission_type: str) -> bool:
+    async def update_shard(self, shard_id: str, request: ShardUpdateRequest, current_user_id: int) -> ShardResponse:
         """
-        检查分片权限
+        更新分片信息
         
         Args:
             shard_id: 分片ID
-            user_id: 用户ID
-            permission_type: 权限类型
+            request: 更新请求
+            current_user_id: 当前用户ID
             
         Returns:
-            bool: 有权限返回True
-        """
-        return self.permission_dao.check_permission(shard_id, user_id, permission_type)
-    
-    def _log_access(self, shard_id: int, user_id: int, action: str, result: str, 
-                   details: Optional[Dict[str, Any]] = None):
-        """
-        记录访问日志
-        
-        Args:
-            shard_id: 分片ID
-            user_id: 用户ID
-            action: 操作类型
-            result: 操作结果
-            details: 详细信息
+            ShardResponse: 更新后的分片数据
+            
+        Raises:
+            NotFoundError: 分片不存在
+            AuthorizationError: 无权限修改
         """
         try:
-            log_data = {
-                'shard_id': shard_id,
-                'user_id': user_id,
-                'action': action,
-                'result': result,
-                'request_data': details
-            }
-            self.access_log_dao.create_access_log(log_data)
+            # 获取分片信息
+            shard = await self.shard_dao.get_shard_by_id(shard_id)
+            if not shard:
+                raise NotFoundError("分片不存在")
+            
+            # 检查修改权限
+            await self._check_shard_modify_permission(shard, current_user_id)
+            
+            # 准备更新数据
+            update_data = {}
+            if request.status:
+                update_data['status'] = request.status
+            if request.processing_node:
+                update_data['processing_node'] = request.processing_node
+            if request.error_message is not None:
+                update_data['error_message'] = request.error_message
+            
+            update_data['updated_at'] = datetime.utcnow()
+            
+            # 更新分片
+            updated_shard = await self.shard_dao.update_shard(shard_id, update_data)
+            
+            # 记录操作日志
+            await self._log_shard_access(shard.id, current_user_id, "update")
+            
+            logger.info(f"分片 {shard_id} 更新成功")
+            
+            return ShardResponse(
+                id=updated_shard.id,
+                shard_id=updated_shard.shard_id,
+                order_id=updated_shard.order_id,
+                shard_index=updated_shard.shard_index,
+                total_shards=updated_shard.total_shards,
+                status=updated_shard.status,
+                encryption_algorithm=updated_shard.encryption_algorithm,
+                hash_value=updated_shard.hash_value,
+                size=updated_shard.size,
+                created_at=updated_shard.created_at,
+                updated_at=updated_shard.updated_at
+            )
+            
         except Exception as e:
-            logger.error(f"Error logging access: {e}")
+            logger.error(f"更新分片失败: {str(e)}")
+            raise
     
-    def _generate_shard_id(self, file_hash: str, owner_id: int) -> str:
+    async def delete_shard(self, shard_id: str, current_user_id: int) -> bool:
         """
-        生成分片ID
+        删除分片
         
         Args:
-            file_hash: 文件哈希
-            owner_id: 所有者ID
+            shard_id: 分片ID
+            current_user_id: 当前用户ID
             
         Returns:
-            str: 分片ID
+            bool: 是否删除成功
+            
+        Raises:
+            NotFoundError: 分片不存在
+            AuthorizationError: 无权限删除
         """
-        data = f"{file_hash}_{owner_id}_{datetime.now().isoformat()}"
-        return hashlib.sha256(data.encode()).hexdigest()[:32]
+        try:
+            # 获取分片信息
+            shard = await self.shard_dao.get_shard_by_id(shard_id)
+            if not shard:
+                raise NotFoundError("分片不存在")
+            
+            # 检查删除权限
+            await self._check_shard_delete_permission(shard, current_user_id)
+            
+            # 检查分片状态
+            if shard.status == "processing":
+                raise ValidationError("处理中的分片不能删除")
+            
+            # 删除分片
+            success = await self.shard_dao.delete_shard(shard_id)
+            
+            if success:
+                # 记录操作日志
+                await self._log_shard_access(shard.id, current_user_id, "delete")
+                logger.info(f"分片 {shard_id} 删除成功")
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"删除分片失败: {str(e)}")
+            raise
     
-    def _verify_zkp_proof(self, proof: str, data: bytes) -> bool:
+    async def download_shard(self, shard_id: str, current_user_id: int) -> bytes:
         """
-        验证零知识证明
+        下载分片数据
         
         Args:
-            proof: ZKP证明
-            data: 数据
+            shard_id: 分片ID
+            current_user_id: 当前用户ID
+            
+        Returns:
+            bytes: 分片数据
+            
+        Raises:
+            NotFoundError: 分片不存在
+            AuthorizationError: 无权限下载
+        """
+        try:
+            # 获取分片信息
+            shard = await self.shard_dao.get_shard_by_id(shard_id)
+            if not shard:
+                raise NotFoundError("分片不存在")
+            
+            # 检查下载权限
+            await self._check_shard_access_permission(shard, current_user_id)
+            
+            # 检查分片状态
+            if shard.status != "completed":
+                raise ValidationError("只有已完成的分片才能下载")
+            
+            # 获取分片数据
+            shard_data = shard.data_content.encode('utf-8') if shard.data_content else b''
+            
+            # 记录下载日志
+            await self._log_shard_access(shard.id, current_user_id, "download")
+            
+            logger.info(f"用户 {current_user_id} 下载分片 {shard_id}")
+            
+            return shard_data
+            
+        except Exception as e:
+            logger.error(f"下载分片失败: {str(e)}")
+            raise
+    
+    async def get_shard_stats(self, current_user_id: int) -> ShardStatsResponse:
+        """
+        获取分片统计信息
+        
+        Args:
+            current_user_id: 当前用户ID
+            
+        Returns:
+            ShardStatsResponse: 统计信息
+        """
+        try:
+            stats = await self.shard_dao.get_shard_stats()
+            
+            return ShardStatsResponse(
+                total_shards=stats.get('total_shards', 0),
+                pending_shards=stats.get('pending_shards', 0),
+                processing_shards=stats.get('processing_shards', 0),
+                completed_shards=stats.get('completed_shards', 0),
+                failed_shards=stats.get('failed_shards', 0),
+                total_size=stats.get('total_size', 0)
+            )
+            
+        except Exception as e:
+            logger.error(f"获取分片统计失败: {str(e)}")
+            raise
+    
+    async def validate_shard(self, shard_id: str, current_user_id: int) -> bool:
+        """
+        验证分片完整性
+        
+        Args:
+            shard_id: 分片ID
+            current_user_id: 当前用户ID
             
         Returns:
             bool: 验证结果
+            
+        Raises:
+            NotFoundError: 分片不存在
         """
         try:
-            # 调用Go后端的ZKP验证服务
-            response = requests.post(
-                f"{settings.GO_BACKEND_URL}/api/zkp/verify",
-                json={"proof": proof, "data": base64.b64encode(data).decode()},
-                timeout=30
-            )
-            return response.status_code == 200 and response.json().get('valid', False)
+            # 获取分片信息
+            shard = await self.shard_dao.get_shard_by_id(shard_id)
+            if not shard:
+                raise NotFoundError("分片不存在")
+            
+            # 检查访问权限
+            await self._check_shard_access_permission(shard, current_user_id)
+            
+            # 重新计算哈希值
+            current_hash = self._calculate_shard_hash(shard.data_content)
+            
+            # 验证哈希值
+            is_valid = current_hash == shard.hash_value
+            
+            # 记录验证日志
+            await self._log_shard_access(shard.id, current_user_id, "validate")
+            
+            logger.info(f"分片 {shard_id} 验证结果: {is_valid}")
+            
+            return is_valid
+            
         except Exception as e:
-            logger.error(f"Error verifying ZKP proof: {e}")
-            return False
-from module_dvss.entity.vo.shard_vo import (
-    ShardModel, 
-    ShardPageQueryModel, 
-    AddShardModel, 
-    EditShardModel, 
-    DeleteShardModel,
-    PermissionModel
-)
-from exceptions.custom_exception import ServiceException
-
-
-class CrudResponseModel:
-    """CRUD操作响应模型"""
-    def __init__(self, is_success: bool, message: str, result=None):
-        self.is_success = is_success
-        self.message = message
-        self.result = result
-
-
-class ShardService:
-    """
-    数据分片管理模块服务层
-    """
-
-    @classmethod
-    def _generate_shard_hash(cls, file_path: str, size: int, owner_id: int) -> str:
-        """
-        生成分片哈希
+            logger.error(f"验证分片失败: {str(e)}")
+            raise
+    
+    # 私有方法
+    
+    def _generate_shard_id(self, order_id: str, shard_index: int) -> str:
+        """生成分片ID"""
+        import uuid
+        timestamp = int(datetime.utcnow().timestamp())
+        return f"{order_id}_{shard_index}_{timestamp}_{uuid.uuid4().hex[:8]}"
+    
+    def _calculate_shard_hash(self, data_content: str) -> str:
+        """计算分片哈希值"""
+        if not data_content:
+            return ""
+        return self.crypto_util.calculate_hash(data_content.encode('utf-8'))
+    
+    async def _check_shard_access_permission(self, shard, user_id: int):
+        """检查分片访问权限"""
+        # TODO: 实现权限检查逻辑
+        # 临时实现：只允许创建者或管理员访问
+        user = await self.user_dao.get_user_by_id(user_id)
+        if not user:
+            raise AuthorizationError("用户不存在")
         
-        :param file_path: 文件路径
-        :param size: 文件大小
-        :param owner_id: 所有者ID
-        :return: 分片哈希
-        """
-        content = f"{file_path}_{size}_{owner_id}_{datetime.now().timestamp()}"
-        return hashlib.sha256(content.encode()).hexdigest()
-
-    @classmethod
-    def _generate_checksum(cls, file_path: str) -> str:
+        if shard.created_by != user_id and user.role != 'admin':
+            raise AuthorizationError("无权限访问该分片")
+    
+    async def _check_shard_modify_permission(self, shard, user_id: int):
+        """检查分片修改权限"""
+        # TODO: 实现权限检查逻辑
+        user = await self.user_dao.get_user_by_id(user_id)
+        if not user:
+            raise AuthorizationError("用户不存在")
+        
+        if shard.created_by != user_id and user.role != 'admin':
+            raise AuthorizationError("无权限修改该分片")
+    
+    async def _check_shard_delete_permission(self, shard, user_id: int):
+        """检查分片删除权限"""
+        # TODO: 实现权限检查逻辑
+        user = await self.user_dao.get_user_by_id(user_id)
+        if not user:
+            raise AuthorizationError("用户不存在")
+        
+        if shard.created_by != user_id and user.role != 'admin':
+            raise AuthorizationError("无权限删除该分片")
+    
+    async def _log_shard_access(self, shard_id: int, user_id: int, action: str):
+        """记录分片访问日志"""
+        try:
+            # TODO: 实现访问日志记录
+            logger.info(f"用户 {user_id} 对分片 {shard_id} 执行了 {action} 操作")
+        except Exception as e:
+            logger.error(f"记录分片访问日志失败: {str(e)}")
