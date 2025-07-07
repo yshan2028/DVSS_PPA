@@ -12,7 +12,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/swaggo/files" // gin-swagger middleware
+	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
@@ -69,7 +69,7 @@ func main() {
 	})
 
 	// Swagger文档端点
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(files.Handler))
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Prometheus metrics端点
 	r.GET("/metrics", func(c *gin.Context) {
