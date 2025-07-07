@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS orders (
     shipping_cost DECIMAL(10,2),
     discount DECIMAL(10,2),
     sensitivity_score DECIMAL(5,4),
+    sensitivity_level VARCHAR(20) DEFAULT 'medium', -- low, medium, high, critical
     data_source VARCHAR(50), -- alibaba, weee
     status VARCHAR(20) DEFAULT 'active', -- active, deleted
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

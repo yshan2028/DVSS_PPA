@@ -1,473 +1,273 @@
 """
-日志数据访问层
+日志数据访问层 (DAO) - 异步版本
 """
-from typing import List, Optional, Dict, Any, Tuple
-from sqlalchemy import and_, or_, func, desc, asc
-from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
 
-from ..entity.operation_log import OperationLog
-from ..schemas.log_schema import LogSearchRequest, SystemLogCreate, SecurityLogCreate
-from core.deps import get_db_session
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
+
+from sqlalchemy import and_, asc, desc, func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from module_dvss.entity.operation_log import OperationLog
+from module_dvss.schemas.log_schema import LogSearchRequest, SecurityLogCreate, SystemLogCreate
+from utils.log_util import LogUtil
+
+logger = LogUtil.get_logger('log_dao')
 
 
 class LogDAO:
     """日志数据访问对象"""
-    
-    def __init__(self):
-        self.session = None
-    
-    async def get_session(self) -> Session:
-        """获取数据库会话"""
-        if not self.session:
-            self.session = next(get_db_session())
-        return self.session
-    
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
     async def create_operation_log(self, log: OperationLog) -> OperationLog:
         """创建操作日志"""
-        session = await self.get_session()
         try:
-            session.add(log)
-            session.commit()
-            session.refresh(log)
+            self.db.add(log)
+            await self.db.commit()
+            await self.db.refresh(log)
             return log
         except Exception as e:
-            session.rollback()
-            raise e
-    
-    async def create_system_log(self, log_data: SystemLogCreate) -> Any:
-        """创建系统日志"""
-        # 这里应该创建SystemLog实体并保存
-        # 暂时返回模拟对象
-        class MockSystemLog:
-            def __init__(self, **kwargs):
-                for k, v in kwargs.items():
-                    setattr(self, k, v)
-                self.id = 1
-                self.created_at = datetime.now()
-        
-        return MockSystemLog(**log_data.dict())
-    
-    async def create_security_log(self, log_data: SecurityLogCreate) -> Any:
-        """创建安全日志"""
-        # 这里应该创建SecurityLog实体并保存
-        # 暂时返回模拟对象
-        class MockSecurityLog:
-            def __init__(self, **kwargs):
-                for k, v in kwargs.items():
-                    setattr(self, k, v)
-                self.id = 1
-                self.created_at = datetime.now()
-        
-        return MockSecurityLog(**log_data.dict())
-    
+            await self.db.rollback()
+            logger.error(f'Error creating operation log: {str(e)}')
+            raise
+
     async def get_operation_log_by_id(self, log_id: int) -> Optional[OperationLog]:
         """根据ID获取操作日志"""
-        session = await self.get_session()
-        return session.query(OperationLog).filter(OperationLog.id == log_id).first()
-    
-    async def get_operation_logs_list(self, page: int = 1, size: int = 20, 
-                                    filters: Optional[Dict[str, Any]] = None,
-                                    order_by: str = 'created_at',
-                                    order_direction: str = 'desc') -> Tuple[List[OperationLog], int]:
-        """获取操作日志列表"""
-        session = await self.get_session()
-        
-        query = session.query(OperationLog)
-        
-        # 应用过滤条件
-        if filters:
-            for key, value in filters.items():
-                if hasattr(OperationLog, key) and value is not None:
-                    if key == 'user_id':
-                        query = query.filter(OperationLog.user_id == value)
-                    elif key == 'operation_type':
-                        query = query.filter(OperationLog.operation_type == value)
-                    elif key == 'resource_type':
-                        query = query.filter(OperationLog.resource_type == value)
-                    elif key == 'is_success':
-                        query = query.filter(OperationLog.is_success == value)
-                    elif key == 'start_date':
-                        query = query.filter(OperationLog.created_at >= value)
-                    elif key == 'end_date':
-                        query = query.filter(OperationLog.created_at <= value)
-                    elif key == 'keyword':
-                        # 模糊搜索
-                        query = query.filter(
-                            or_(
-                                OperationLog.username.like(f'%{value}%'),
-                                OperationLog.operation_details.like(f'%{value}%'),
-                                OperationLog.resource_id.like(f'%{value}%')
-                            )
-                        )
-                    elif key == 'ip_address':
-                        query = query.filter(OperationLog.ip_address == value)
-        
-        # 获取总数
-        total = query.count()
-        
-        # 排序
-        if hasattr(OperationLog, order_by):
-            if order_direction.lower() == 'desc':
-                query = query.order_by(desc(getattr(OperationLog, order_by)))
-            else:
-                query = query.order_by(asc(getattr(OperationLog, order_by)))
-        
-        # 分页
-        logs = query.offset((page - 1) * size).limit(size).all()
-        
-        return logs, total
-    
-    async def search_logs(self, search_request: LogSearchRequest, 
-                         page: int = 1, size: int = 20) -> Dict[str, Any]:
-        """搜索日志"""
-        session = await self.get_session()
-        
-        # 构建基础查询
-        query = session.query(OperationLog)
-        
-        # 应用搜索条件
-        if search_request.keyword:
-            query = query.filter(
-                or_(
-                    OperationLog.username.like(f'%{search_request.keyword}%'),
-                    OperationLog.operation_details.like(f'%{search_request.keyword}%'),
-                    OperationLog.resource_id.like(f'%{search_request.keyword}%')
-                )
-            )
-        
-        if search_request.operation_type:
-            query = query.filter(OperationLog.operation_type == search_request.operation_type)
-        
-        if search_request.user_id:
-            query = query.filter(OperationLog.user_id == search_request.user_id)
-        
-        if search_request.username:
-            query = query.filter(OperationLog.username.like(f'%{search_request.username}%'))
-        
-        if search_request.resource_type:
-            query = query.filter(OperationLog.resource_type == search_request.resource_type)
-        
-        if search_request.resource_id:
-            query = query.filter(OperationLog.resource_id == search_request.resource_id)
-        
-        if search_request.ip_address:
-            query = query.filter(OperationLog.ip_address == search_request.ip_address)
-        
-        if search_request.start_date:
-            query = query.filter(OperationLog.created_at >= search_request.start_date)
-        
-        if search_request.end_date:
-            query = query.filter(OperationLog.created_at <= search_request.end_date)
-        
-        if search_request.is_success is not None:
-            query = query.filter(OperationLog.is_success == search_request.is_success)
-        
-        # 获取总数
-        total = query.count()
-        
-        # 分页和排序
-        logs = query.order_by(desc(OperationLog.created_at)).offset(
-            (page - 1) * size
-        ).limit(size).all()
-        
-        return {
-            'logs': logs,
-            'total': total,
-            'page': page,
-            'size': size,
-            'pages': (total + size - 1) // size
-        }
-    
-    async def get_statistics(self, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
-        """获取日志统计信息"""
-        session = await self.get_session()
-        
-        # 基础统计
-        total_logs = session.query(func.count(OperationLog.id)).filter(
-            and_(
-                OperationLog.created_at >= start_date,
-                OperationLog.created_at <= end_date
-            )
-        ).scalar()
-        
-        success_count = session.query(func.count(OperationLog.id)).filter(
-            and_(
-                OperationLog.created_at >= start_date,
-                OperationLog.created_at <= end_date,
-                OperationLog.is_success == True
-            )
-        ).scalar()
-        
-        error_count = total_logs - success_count
-        success_rate = (success_count / total_logs * 100) if total_logs > 0 else 0
-        
-        # 热门操作
-        top_operations = session.query(
-            OperationLog.operation_type,
-            func.count(OperationLog.id).label('count')
-        ).filter(
-            and_(
-                OperationLog.created_at >= start_date,
-                OperationLog.created_at <= end_date
-            )
-        ).group_by(OperationLog.operation_type).order_by(
-            desc('count')
-        ).limit(10).all()
-        
-        top_operations_list = [
-            {'operation': op.operation_type, 'count': op.count}
-            for op in top_operations
-        ]
-        
-        # 活跃用户
-        top_users = session.query(
-            OperationLog.username,
-            func.count(OperationLog.id).label('count')
-        ).filter(
-            and_(
-                OperationLog.created_at >= start_date,
-                OperationLog.created_at <= end_date
-            )
-        ).group_by(OperationLog.username).order_by(
-            desc('count')
-        ).limit(10).all()
-        
-        top_users_list = [
-            {'username': user.username, 'count': user.count}
-            for user in top_users
-        ]
-        
-        # 错误分布
-        error_distribution = {}
-        if error_count > 0:
-            error_ops = session.query(
-                OperationLog.operation_type,
-                func.count(OperationLog.id).label('count')
-            ).filter(
-                and_(
-                    OperationLog.created_at >= start_date,
-                    OperationLog.created_at <= end_date,
-                    OperationLog.is_success == False
-                )
-            ).group_by(OperationLog.operation_type).all()
-            
-            error_distribution = {
-                op.operation_type: op.count for op in error_ops
-            }
-        
-        # 小时分布
-        hourly_distribution = []
-        for hour in range(24):
-            count = session.query(func.count(OperationLog.id)).filter(
-                and_(
-                    OperationLog.created_at >= start_date,
-                    OperationLog.created_at <= end_date,
-                    func.extract('hour', OperationLog.created_at) == hour
-                )
-            ).scalar()
-            
-            hourly_distribution.append({
-                'hour': hour,
-                'count': count
-            })
-        
-        # 日趋势
-        daily_trends = []
-        current_date = start_date.date()
-        end_date_only = end_date.date()
-        
-        while current_date <= end_date_only:
-            count = session.query(func.count(OperationLog.id)).filter(
-                and_(
-                    func.date(OperationLog.created_at) == current_date
-                )
-            ).scalar()
-            
-            daily_trends.append({
-                'date': current_date.strftime('%Y-%m-%d'),
-                'count': count
-            })
-            
-            current_date += timedelta(days=1)
-        
-        return {
-            'total_logs': total_logs,
-            'operation_logs': total_logs,  # 目前只有操作日志
-            'system_logs': 0,
-            'success_count': success_count,
-            'error_count': error_count,
-            'success_rate': round(success_rate, 2),
-            'top_operations': top_operations_list,
-            'top_users': top_users_list,
-            'error_distribution': error_distribution,
-            'hourly_distribution': hourly_distribution,
-            'daily_trends': daily_trends
-        }
-    
-    async def get_user_activities(self, user_id: int, start_date: datetime, 
-                                 end_date: datetime) -> List[OperationLog]:
-        """获取用户活动记录"""
-        session = await self.get_session()
-        
-        return session.query(OperationLog).filter(
-            and_(
-                OperationLog.user_id == user_id,
-                OperationLog.created_at >= start_date,
-                OperationLog.created_at <= end_date
-            )
-        ).order_by(desc(OperationLog.created_at)).all()
-    
-    async def get_user_recent_activities(self, user_id: int, hours: int = 24) -> List[OperationLog]:
-        """获取用户最近的活动记录"""
-        session = await self.get_session()
-        since_time = datetime.now() - timedelta(hours=hours)
-        
-        return session.query(OperationLog).filter(
-            and_(
-                OperationLog.user_id == user_id,
-                OperationLog.created_at >= since_time
-            )
-        ).order_by(desc(OperationLog.created_at)).all()
-    
-    async def get_failed_login_attempts(self, user_id: int = None, ip_address: str = None,
-                                       hours: int = 24) -> List[OperationLog]:
-        """获取失败的登录尝试"""
-        session = await self.get_session()
-        since_time = datetime.now() - timedelta(hours=hours)
-        
-        query = session.query(OperationLog).filter(
-            and_(
-                OperationLog.operation_type == 'LOGIN',
-                OperationLog.is_success == False,
-                OperationLog.created_at >= since_time
-            )
-        )
-        
-        if user_id:
-            query = query.filter(OperationLog.user_id == user_id)
-        
-        if ip_address:
-            query = query.filter(OperationLog.ip_address == ip_address)
-        
-        return query.order_by(desc(OperationLog.created_at)).all()
-    
-    async def get_sensitive_operations(self, start_date: datetime, 
-                                     end_date: datetime) -> List[OperationLog]:
-        """获取敏感操作记录"""
-        session = await self.get_session()
-        
-        sensitive_operations = [
-            'DECRYPT_ORDER', 'VIEW_SENSITIVE_DATA', 'EXPORT_DATA',
-            'DELETE_USER', 'DELETE_ORDER', 'SYSTEM_CONFIG'
-        ]
-        
-        return session.query(OperationLog).filter(
-            and_(
-                OperationLog.operation_type.in_(sensitive_operations),
-                OperationLog.created_at >= start_date,
-                OperationLog.created_at <= end_date
-            )
-        ).order_by(desc(OperationLog.created_at)).all()
-    
-    async def cleanup_old_logs(self, days_to_keep: int = 90) -> int:
-        """清理旧日志"""
-        session = await self.get_session()
-        
-        cutoff_date = datetime.now() - timedelta(days=days_to_keep)
-        
         try:
-            deleted_count = session.query(OperationLog).filter(
-                OperationLog.created_at < cutoff_date
-            ).delete()
-            
-            session.commit()
-            return deleted_count
+            stmt = select(OperationLog).where(OperationLog.id == log_id)
+            result = await self.db.execute(stmt)
+            return result.scalar_one_or_none()
         except Exception as e:
-            session.rollback()
-            raise e
-    
-    async def get_operation_counts_by_user(self, start_date: datetime, 
-                                         end_date: datetime) -> List[Dict[str, Any]]:
-        """按用户统计操作次数"""
-        session = await self.get_session()
-        
-        results = session.query(
-            OperationLog.user_id,
-            OperationLog.username,
-            func.count(OperationLog.id).label('total_operations'),
-            func.sum(
-                func.case([(OperationLog.is_success == True, 1)], else_=0)
-            ).label('successful_operations'),
-            func.sum(
-                func.case([(OperationLog.is_success == False, 1)], else_=0)
-            ).label('failed_operations')
-        ).filter(
-            and_(
-                OperationLog.created_at >= start_date,
-                OperationLog.created_at <= end_date
-            )
-        ).group_by(
-            OperationLog.user_id, OperationLog.username
-        ).order_by(desc('total_operations')).all()
-        
-        return [
-            {
-                'user_id': result.user_id,
-                'username': result.username,
-                'total_operations': result.total_operations,
-                'successful_operations': result.successful_operations,
-                'failed_operations': result.failed_operations,
-                'success_rate': (result.successful_operations / result.total_operations * 100) 
-                              if result.total_operations > 0 else 0
+            logger.error(f'Error getting operation log by id {log_id}: {str(e)}')
+            raise
+
+    async def get_operation_logs_list(
+        self,
+        page: int = 1,
+        size: int = 20,
+        filters: Optional[Dict[str, Any]] = None,
+        order_by: str = 'created_at',
+        order_direction: str = 'desc',
+    ) -> Tuple[List[OperationLog], int]:
+        """获取操作日志列表"""
+        try:
+            stmt = select(OperationLog)
+
+            # 应用过滤条件
+            if filters:
+                for key, value in filters.items():
+                    if value is not None:
+                        if key == 'user_id':
+                            stmt = stmt.where(OperationLog.user_id == value)
+                        elif key == 'operation_type':
+                            stmt = stmt.where(OperationLog.operation_type == value)
+                        elif key == 'resource_type':
+                            stmt = stmt.where(OperationLog.resource_type == value)
+                        elif key == 'resource_id':
+                            stmt = stmt.where(OperationLog.resource_id == value)
+                        elif key == 'ip_address':
+                            stmt = stmt.where(OperationLog.ip_address == value)
+                        elif key == 'start_date':
+                            stmt = stmt.where(OperationLog.created_at >= value)
+                        elif key == 'end_date':
+                            stmt = stmt.where(OperationLog.created_at <= value)
+                        elif key == 'is_success':
+                            stmt = stmt.where(OperationLog.status == ('success' if value else 'failure'))
+
+            # 获取总数
+            count_stmt = select(func.count()).select_from(stmt.subquery())
+            total_result = await self.db.execute(count_stmt)
+            total = total_result.scalar()
+
+            # 排序
+            if hasattr(OperationLog, order_by):
+                if order_direction.lower() == 'desc':
+                    stmt = stmt.order_by(desc(getattr(OperationLog, order_by)))
+                else:
+                    stmt = stmt.order_by(asc(getattr(OperationLog, order_by)))
+
+            # 分页
+            stmt = stmt.offset((page - 1) * size).limit(size)
+            result = await self.db.execute(stmt)
+            logs = result.scalars().all()
+
+            return list(logs), total
+
+        except Exception as e:
+            logger.error(f'Error getting operation logs list: {str(e)}')
+            raise
+
+    async def search_logs(self, search_request: LogSearchRequest, page: int = 1, size: int = 20) -> Dict[str, Any]:
+        """搜索日志"""
+        try:
+            stmt = select(OperationLog)
+
+            # 应用搜索条件
+            if search_request.user_id:
+                stmt = stmt.where(OperationLog.user_id == search_request.user_id)
+
+            if search_request.operation_type:
+                stmt = stmt.where(OperationLog.operation_type == search_request.operation_type)
+
+            if search_request.resource_type:
+                stmt = stmt.where(OperationLog.resource_type == search_request.resource_type)
+
+            if search_request.resource_id:
+                stmt = stmt.where(OperationLog.resource_id == search_request.resource_id)
+
+            if search_request.ip_address:
+                stmt = stmt.where(OperationLog.ip_address == search_request.ip_address)
+
+            if search_request.start_date:
+                stmt = stmt.where(OperationLog.created_at >= search_request.start_date)
+
+            if search_request.end_date:
+                stmt = stmt.where(OperationLog.created_at <= search_request.end_date)
+
+            if search_request.is_success is not None:
+                status = 'success' if search_request.is_success else 'failure'
+                stmt = stmt.where(OperationLog.status == status)
+
+            # 获取总数
+            count_stmt = select(func.count()).select_from(stmt.subquery())
+            total_result = await self.db.execute(count_stmt)
+            total = total_result.scalar()
+
+            # 分页和排序
+            stmt = stmt.order_by(desc(OperationLog.created_at))
+            stmt = stmt.offset((page - 1) * size).limit(size)
+            result = await self.db.execute(stmt)
+            logs = result.scalars().all()
+
+            return {
+                'logs': list(logs),
+                'total': total,
+                'page': page,
+                'size': size,
+                'total_pages': (total + size - 1) // size,
             }
-            for result in results
-        ]
-    
-    async def get_resource_access_stats(self, resource_type: str, 
-                                       start_date: datetime, 
-                                       end_date: datetime) -> Dict[str, Any]:
-        """获取资源访问统计"""
-        session = await self.get_session()
-        
-        total_access = session.query(func.count(OperationLog.id)).filter(
-            and_(
-                OperationLog.resource_type == resource_type,
-                OperationLog.created_at >= start_date,
-                OperationLog.created_at <= end_date
+
+        except Exception as e:
+            logger.error(f'Error searching logs: {str(e)}')
+            raise
+
+    async def get_logs_by_user(self, user_id: int, page: int = 1, size: int = 20) -> Tuple[List[OperationLog], int]:
+        """获取用户操作日志"""
+        return await self.get_operation_logs_list(page=page, size=size, filters={'user_id': user_id})
+
+    async def get_logs_by_type(self, operation_type: str, page: int = 1, size: int = 20) -> Tuple[List[OperationLog], int]:
+        """根据操作类型获取日志"""
+        return await self.get_operation_logs_list(page=page, size=size, filters={'operation_type': operation_type})
+
+    async def get_logs_by_date(self, date: datetime, page: int = 1, size: int = 20) -> Tuple[List[OperationLog], int]:
+        """根据日期获取日志"""
+        start_date = date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = start_date + timedelta(days=1)
+        return await self.get_operation_logs_list(
+            page=page, size=size, filters={'start_date': start_date, 'end_date': end_date}
+        )
+
+    async def get_logs_by_time_range(
+        self, start_date: datetime, end_date: datetime, page: int = 1, size: int = 20
+    ) -> Tuple[List[OperationLog], int]:
+        """根据时间范围获取日志"""
+        return await self.get_operation_logs_list(
+            page=page, size=size, filters={'start_date': start_date, 'end_date': end_date}
+        )
+
+    async def get_statistics(self, days: int = 30) -> Dict[str, Any]:
+        """获取日志统计信息"""
+        try:
+            end_date = datetime.utcnow()
+            start_date = end_date - timedelta(days=days)
+
+            # 总操作数
+            total_stmt = select(func.count(OperationLog.id)).where(
+                OperationLog.created_at >= start_date
             )
-        ).scalar()
-        
-        unique_users = session.query(func.count(func.distinct(OperationLog.user_id))).filter(
-            and_(
-                OperationLog.resource_type == resource_type,
-                OperationLog.created_at >= start_date,
-                OperationLog.created_at <= end_date
+            total_result = await self.db.execute(total_stmt)
+            total_operations = total_result.scalar()
+
+            # 成功操作数
+            success_stmt = select(func.count(OperationLog.id)).where(
+                and_(OperationLog.created_at >= start_date, OperationLog.status == 'success')
             )
-        ).scalar()
-        
-        top_accessed_resources = session.query(
-            OperationLog.resource_id,
-            func.count(OperationLog.id).label('access_count')
-        ).filter(
-            and_(
-                OperationLog.resource_type == resource_type,
-                OperationLog.created_at >= start_date,
-                OperationLog.created_at <= end_date
-            )
-        ).group_by(OperationLog.resource_id).order_by(
-            desc('access_count')
-        ).limit(10).all()
-        
-        return {
-            'resource_type': resource_type,
-            'total_access': total_access,
-            'unique_users': unique_users,
-            'top_accessed_resources': [
-                {
-                    'resource_id': resource.resource_id,
-                    'access_count': resource.access_count
-                }
-                for resource in top_accessed_resources
-            ]
-        }
+            success_result = await self.db.execute(success_stmt)
+            success_operations = success_result.scalar()
+
+            # 失败操作数
+            failure_operations = total_operations - success_operations
+
+            # 操作类型分布
+            type_stmt = select(
+                OperationLog.operation_type, func.count(OperationLog.id).label('count')
+            ).where(OperationLog.created_at >= start_date).group_by(OperationLog.operation_type)
+            type_result = await self.db.execute(type_stmt)
+            operation_types = {row[0]: row[1] for row in type_result.fetchall()}
+
+            # 资源类型分布
+            resource_stmt = select(
+                OperationLog.resource_type, func.count(OperationLog.id).label('count')
+            ).where(OperationLog.created_at >= start_date).group_by(OperationLog.resource_type)
+            resource_result = await self.db.execute(resource_stmt)
+            resource_types = {row[0]: row[1] for row in resource_result.fetchall()}
+
+            return {
+                'total_operations': total_operations,
+                'success_operations': success_operations,
+                'failure_operations': failure_operations,
+                'success_rate': round(success_operations / total_operations * 100, 2) if total_operations > 0 else 0,
+                'operation_types': operation_types,
+                'resource_types': resource_types,
+                'period_days': days,
+            }
+
+        except Exception as e:
+            logger.error(f'Error getting log statistics: {str(e)}')
+            raise
+
+    async def delete_old_logs(self, days: int = 90) -> int:
+        """删除旧日志"""
+        try:
+            cutoff_date = datetime.utcnow() - timedelta(days=days)
+            stmt = select(OperationLog).where(OperationLog.created_at < cutoff_date)
+            result = await self.db.execute(stmt)
+            logs_to_delete = result.scalars().all()
+            
+            count = len(logs_to_delete)
+            for log in logs_to_delete:
+                await self.db.delete(log)
+            
+            await self.db.commit()
+            return count
+
+        except Exception as e:
+            await self.db.rollback()
+            logger.error(f'Error deleting old logs: {str(e)}')
+            raise
+
+    async def get_total_count(self) -> int:
+        """获取日志总数"""
+        try:
+            stmt = select(func.count(OperationLog.id))
+            result = await self.db.execute(stmt)
+            return result.scalar()
+        except Exception as e:
+            logger.error(f'Error getting total count: {str(e)}')
+            raise
+
+    async def create_system_log(self, log_data: SystemLogCreate) -> Any:
+        """创建系统日志"""
+        # 这里可以实现系统日志的创建逻辑
+        # 暂时返回模拟对象
+        logger.info(f"Creating system log: {log_data}")
+        return {"id": 1, "message": "System log created"}
+
+    async def create_security_log(self, log_data: SecurityLogCreate) -> Any:
+        """创建安全日志"""
+        # 这里可以实现安全日志的创建逻辑
+        # 暂时返回模拟对象
+        logger.info(f"Creating security log: {log_data}")
+        return {"id": 1, "message": "Security log created"}

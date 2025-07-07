@@ -1,20 +1,21 @@
 """
 字段管理服务层
 """
+
 from typing import List, Optional, Tuple
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from module_dvss.dao.field_dao import FieldDAO
 from module_dvss.schemas.field_schema import (
-    FieldCreate, 
-    FieldUpdate, 
-    FieldResponse,
-    FieldList,
     FieldBatchUpdate,
+    FieldCreate,
+    FieldList,
+    FieldPermission,
+    FieldResponse,
     FieldSensitivityAnalysis,
-    FieldPermission
+    FieldUpdate,
 )
-from module_dvss.entity.order_field import OrderField, RoleFieldPermission
 from utils.log_util import LogUtil
 
 logger = LogUtil.get_logger(__name__)
@@ -35,11 +36,11 @@ class FieldService:
                 raise ValueError(f"字段名 '{field_data.field_name}' 已存在")
 
             field = await self.field_dao.create_field(field_data)
-            logger.info(f"成功创建字段: {field.field_name}")
-            
+            logger.info(f'成功创建字段: {field.field_name}')
+
             return FieldResponse.from_orm(field)
         except Exception as e:
-            logger.error(f"创建字段失败: {str(e)}")
+            logger.error(f'创建字段失败: {str(e)}')
             raise
 
     async def get_field_by_id(self, field_id: int) -> Optional[FieldResponse]:
@@ -56,7 +57,7 @@ class FieldService:
         category: Optional[str] = None,
         sensitivity_level: Optional[str] = None,
         is_active: Optional[bool] = None,
-        search: Optional[str] = None
+        search: Optional[str] = None,
     ) -> Tuple[List[FieldList], int]:
         """获取字段列表"""
         skip = (page - 1) * size
@@ -66,9 +67,9 @@ class FieldService:
             category=category,
             sensitivity_level=sensitivity_level,
             is_active=is_active,
-            search=search
+            search=search,
         )
-        
+
         field_list = [FieldList.from_orm(field) for field in fields]
         return field_list, total
 
@@ -83,11 +84,11 @@ class FieldService:
 
             field = await self.field_dao.update_field(field_id, field_data)
             if field:
-                logger.info(f"成功更新字段: {field.field_name}")
+                logger.info(f'成功更新字段: {field.field_name}')
                 return FieldResponse.from_orm(field)
             return None
         except Exception as e:
-            logger.error(f"更新字段失败: {str(e)}")
+            logger.error(f'更新字段失败: {str(e)}')
             raise
 
     async def delete_field(self, field_id: int) -> bool:
@@ -95,20 +96,20 @@ class FieldService:
         try:
             success = await self.field_dao.delete_field(field_id)
             if success:
-                logger.info(f"成功删除字段: {field_id}")
+                logger.info(f'成功删除字段: {field_id}')
             return success
         except Exception as e:
-            logger.error(f"删除字段失败: {str(e)}")
+            logger.error(f'删除字段失败: {str(e)}')
             raise
 
     async def batch_update_fields(self, batch_data: FieldBatchUpdate) -> int:
         """批量更新字段"""
         try:
             count = await self.field_dao.batch_update_fields(batch_data)
-            logger.info(f"批量更新字段成功，影响 {count} 条记录")
+            logger.info(f'批量更新字段成功，影响 {count} 条记录')
             return count
         except Exception as e:
-            logger.error(f"批量更新字段失败: {str(e)}")
+            logger.error(f'批量更新字段失败: {str(e)}')
             raise
 
     async def get_sensitivity_analysis(self) -> FieldSensitivityAnalysis:
@@ -117,7 +118,7 @@ class FieldService:
             analysis_data = await self.field_dao.get_sensitivity_analysis()
             return FieldSensitivityAnalysis(**analysis_data)
         except Exception as e:
-            logger.error(f"获取敏感度分析失败: {str(e)}")
+            logger.error(f'获取敏感度分析失败: {str(e)}')
             raise
 
     async def get_fields_by_category(self, category: str) -> List[FieldResponse]:
@@ -135,18 +136,20 @@ class FieldService:
         try:
             permissions = await self.field_dao.get_field_permissions_by_role(role_id)
             result = []
-            
+
             for perm in permissions:
-                result.append(FieldPermission(
-                    field_id=perm.field_id,
-                    field_name=perm.field.field_name,
-                    can_view=perm.can_view,
-                    can_decrypt=perm.can_decrypt
-                ))
-            
+                result.append(
+                    FieldPermission(
+                        field_id=perm.field_id,
+                        field_name=perm.field.field_name,
+                        can_view=perm.can_view,
+                        can_decrypt=perm.can_decrypt,
+                    )
+                )
+
             return result
         except Exception as e:
-            logger.error(f"获取角色字段权限失败: {str(e)}")
+            logger.error(f'获取角色字段权限失败: {str(e)}')
             raise
 
     async def set_role_field_permissions(self, role_id: int, permissions: List[dict]) -> bool:
@@ -154,45 +157,43 @@ class FieldService:
         try:
             success = await self.field_dao.set_role_field_permissions(role_id, permissions)
             if success:
-                logger.info(f"成功设置角色 {role_id} 的字段权限")
+                logger.info(f'成功设置角色 {role_id} 的字段权限')
             return success
         except Exception as e:
-            logger.error(f"设置角色字段权限失败: {str(e)}")
+            logger.error(f'设置角色字段权限失败: {str(e)}')
             raise
 
-    async def validate_field_access(self, user_role_id: int, field_id: int, access_type: str = "view") -> bool:
+    async def validate_field_access(self, user_role_id: int, field_id: int, access_type: str = 'view') -> bool:
         """验证字段访问权限"""
         try:
             permissions = await self.field_dao.get_field_permissions_by_role(user_role_id)
-            
+
             for perm in permissions:
                 if perm.field_id == field_id:
-                    if access_type == "view":
+                    if access_type == 'view':
                         return perm.can_view
-                    elif access_type == "decrypt":
+                    elif access_type == 'decrypt':
                         return perm.can_decrypt
                     break
-            
+
             return False
         except Exception as e:
-            logger.error(f"验证字段访问权限失败: {str(e)}")
+            logger.error(f'验证字段访问权限失败: {str(e)}')
             return False
 
-    async def get_accessible_fields(self, user_role_id: int, access_type: str = "view") -> List[int]:
+    async def get_accessible_fields(self, user_role_id: int, access_type: str = 'view') -> List[int]:
         """获取用户可访问的字段ID列表"""
         try:
             permissions = await self.field_dao.get_field_permissions_by_role(user_role_id)
             accessible_fields = []
-            
+
             for perm in permissions:
-                if access_type == "view" and perm.can_view:
+                if access_type == 'view' and perm.can_view or access_type == 'decrypt' and perm.can_decrypt:
                     accessible_fields.append(perm.field_id)
-                elif access_type == "decrypt" and perm.can_decrypt:
-                    accessible_fields.append(perm.field_id)
-            
+
             return accessible_fields
         except Exception as e:
-            logger.error(f"获取可访问字段失败: {str(e)}")
+            logger.error(f'获取可访问字段失败: {str(e)}')
             return []
 
     async def calculate_order_sensitivity_score(self, field_values: dict) -> float:
@@ -200,18 +201,18 @@ class FieldService:
         try:
             total_score = 0.0
             field_count = 0
-            
+
             # 获取所有字段信息
             all_fields = await self.field_dao.get_active_fields()
             field_scores = {field.field_name: field.sensitivity_score for field in all_fields}
-            
+
             # 计算加权平均敏感度
             for field_name, value in field_values.items():
-                if field_name in field_scores and value is not None and value != "":
+                if field_name in field_scores and value is not None and value != '':
                     total_score += field_scores[field_name]
                     field_count += 1
-            
+
             return total_score / field_count if field_count > 0 else 0.0
         except Exception as e:
-            logger.error(f"计算订单敏感度分值失败: {str(e)}")
+            logger.error(f'计算订单敏感度分值失败: {str(e)}')
             return 0.0

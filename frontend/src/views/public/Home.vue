@@ -142,10 +142,12 @@ import { ref, onMounted } from 'vue'
 import { 
   Search, 
   Lock, 
-  Shield, 
-  DataAnalysis, 
+  Document,
+  DataAnalysis,
   Connection,
-  ArrowRight 
+  Grid,
+  Setting,
+  ArrowRight
 } from '@element-plus/icons-vue'
 
 const features = ref([
@@ -160,7 +162,7 @@ const features = ref([
     id: 2,
     title: '隐私保护',
     description: '基于差分隐私和零知识证明技术，保护用户隐私数据',
-    icon: Shield,
+    icon: Document,
     color: '#67C23A'
   },
   {
@@ -181,14 +183,14 @@ const features = ref([
     id: 5,
     title: '分片存储',
     description: '将数据分片存储，提高安全性和可用性',
-    icon: 'Grid',
+    icon: Grid,
     color: '#909399'
   },
   {
     id: 6,
     title: '智能合约',
     description: '自动化执行数据处理流程，确保操作的透明和可信',
-    icon: 'MagicStick',
+    icon: Setting,
     color: '#606266'
   }
 ])

@@ -3,6 +3,7 @@ package main
 import (
 	"dvss-ppa-go-backend/api"
 	"dvss-ppa-go-backend/config"
+	_ "dvss-ppa-go-backend/docs" // swagger docs
 	"dvss-ppa-go-backend/pkg/fabric"
 	"dvss-ppa-go-backend/pkg/middleware"
 	"dvss-ppa-go-backend/pkg/utils"
@@ -11,7 +12,31 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/swaggo/files" // gin-swagger middleware
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+// @title DVSS-PPA Go Backend API
+// @version 1.0
+// @description DVSS-PPA项目的Go后端API，提供Fabric区块链集成功能
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.swagger.io/support
+// @contact.email support@swagger.io
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host localhost:8001
+// @BasePath /api/v1
+// @schemes http
+
+// @securityDefinitions.basic BasicAuth
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 
 func main() {
 	// 初始化配置
@@ -42,6 +67,9 @@ func main() {
 			"version": "1.0.0",
 		})
 	})
+
+	// Swagger文档端点
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(files.Handler))
 
 	// Prometheus metrics端点
 	r.GET("/metrics", func(c *gin.Context) {

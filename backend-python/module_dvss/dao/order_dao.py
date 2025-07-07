@@ -1,388 +1,458 @@
 """
-订单数据访问层
+订单数据访问层 (DAO) - 异步版本
 """
-from typing import List, Optional, Dict, Any, Tuple
-from sqlalchemy import and_, or_, func, desc, asc
-from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
 
-from ..entity.original_order import OriginalOrder
-from ..entity.encrypted_order import EncryptedOrder
-from core.deps import get_db_session
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
+
+from sqlalchemy import and_, asc, desc, func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from utils.log_util import LogUtil
+
+from module_dvss.entity.encrypted_order import EncryptedOrder
+from module_dvss.entity.original_order import OriginalOrder
+
+logger = LogUtil.get_logger('order_dao')
 
 
 class OrderDAO:
-    """订单数据访问对象"""
-    
-    def __init__(self):
-        self.session = None
-    
-    async def get_session(self) -> Session:
-        """获取数据库会话"""
-        if not self.session:
-            self.session = next(get_db_session())
-        return self.session
-    
-    async def create(self, order: OriginalOrder) -> OriginalOrder:
-        """创建订单"""
-        session = await self.get_session()
+    """
+    订单管理模块数据库操作层
+    """
+
+    @classmethod
+    async def create(cls, db: AsyncSession, order: OriginalOrder) -> OriginalOrder:
+        """
+        创建订单
+        
+        :param db: orm对象
+        :param order: 订单对象
+        :return: 创建的订单对象
+        """
         try:
-            session.add(order)
-            session.commit()
-            session.refresh(order)
+            db.add(order)
+            await db.flush()
+            await db.refresh(order)
             return order
         except Exception as e:
-            session.rollback()
-            raise e
-    
-    async def get_by_id(self, order_id: int) -> Optional[OriginalOrder]:
-        """根据ID获取订单"""
-        session = await self.get_session()
-        return session.query(OriginalOrder).filter(
-            and_(
-                OriginalOrder.id == order_id,
-                OriginalOrder.status != 'deleted'
-            )
-        ).first()
-    
-    async def get_by_order_id(self, order_id: str) -> Optional[OriginalOrder]:
-        """根据订单号获取订单"""
-        session = await self.get_session()
-        return session.query(OriginalOrder).filter(
-            and_(
-                OriginalOrder.order_id == order_id,
-                OriginalOrder.status != 'deleted'
-            )
-        ).first()
-    
-    async def get_list(self, page: int = 1, size: int = 10, 
-                      filters: Optional[Dict[str, Any]] = None,
-                      order_by: str = 'created_at',
-                      order_direction: str = 'desc') -> Tuple[List[OriginalOrder], int]:
-        """获取订单列表"""
-        session = await self.get_session()
+            logger.error(f'Error creating order: {str(e)}')
+            raise
+
+    @classmethod
+    async def get_by_id(cls, db: AsyncSession, order_id: int) -> Optional[OriginalOrder]:
+        """
+        根据ID获取订单
         
-        query = session.query(OriginalOrder).filter(OriginalOrder.status != 'deleted')
+        :param db: orm对象
+        :param order_id: 订单ID
+        :return: 订单对象
+        """
+        try:
+            stmt = select(OriginalOrder).where(and_(OriginalOrder.id == order_id, OriginalOrder.status != 'deleted'))
+            result = await db.execute(stmt)
+            return result.scalar_one_or_none()
+        except Exception as e:
+            logger.error(f'Error getting order by id {order_id}: {str(e)}')
+            raise
+
+    @classmethod
+    async def get_by_order_id(cls, db: AsyncSession, order_id: str) -> Optional[OriginalOrder]:
+        """
+        根据订单号获取订单
         
-        # 应用过滤条件
-        if filters:
-            for key, value in filters.items():
-                if hasattr(OriginalOrder, key) and value is not None:
-                    if key == 'user_id':
-                        query = query.filter(OriginalOrder.user_id == value)
-                    elif key == 'status':
-                        query = query.filter(OriginalOrder.status == value)
-                    elif key == 'start_date':
-                        query = query.filter(OriginalOrder.created_at >= value)
-                    elif key == 'end_date':
-                        query = query.filter(OriginalOrder.created_at <= value)
-                    elif key == 'keyword':
-                        # 模糊搜索
-                        query = query.filter(
-                            or_(
-                                OriginalOrder.order_id.like(f'%{value}%'),
-                                OriginalOrder.name.like(f'%{value}%'),
-                                OriginalOrder.phone.like(f'%{value}%'),
-                                OriginalOrder.email.like(f'%{value}%')
-                            )
-                        )
-                    elif key == 'min_amount':
-                        query = query.filter(OriginalOrder.total_amount >= value)
-                    elif key == 'max_amount':
-                        query = query.filter(OriginalOrder.total_amount <= value)
-                    elif key == 'sensitivity_level':
-                        # 根据敏感度级别过滤
-                        if value == 'low':
-                            query = query.filter(OriginalOrder.sensitivity_score < 0.3)
-                        elif value == 'medium':
-                            query = query.filter(
-                                and_(
-                                    OriginalOrder.sensitivity_score >= 0.3,
-                                    OriginalOrder.sensitivity_score < 0.7
+        :param db: orm对象
+        :param order_id: 订单号
+        :return: 订单对象
+        """
+        try:
+            stmt = select(OriginalOrder).where(
+                and_(OriginalOrder.order_id == order_id, OriginalOrder.status != 'deleted')
+            )
+            result = await db.execute(stmt)
+            return result.scalar_one_or_none()
+        except Exception as e:
+            logger.error(f'Error getting order by order_id {order_id}: {str(e)}')
+            raise
+
+    @classmethod
+    async def get_list(
+        cls,
+        db: AsyncSession,
+        page: int = 1,
+        size: int = 10,
+        filters: Optional[Dict[str, Any]] = None,
+        order_by: str = 'created_at',
+        order_direction: str = 'desc',
+    ) -> Tuple[List[OriginalOrder], int]:
+        """
+        获取订单列表
+        
+        :param db: orm对象
+        :param page: 页码
+        :param size: 每页数量
+        :param filters: 过滤条件
+        :param order_by: 排序字段
+        :param order_direction: 排序方向
+        :return: 订单列表和总数
+        """
+        try:
+            stmt = select(OriginalOrder).where(OriginalOrder.status != 'deleted')
+
+            # 应用过滤条件
+            if filters:
+                for key, value in filters.items():
+                    if hasattr(OriginalOrder, key) and value is not None:
+                        if key == 'user_id':
+                            stmt = stmt.where(OriginalOrder.user_id == value)
+                        elif key == 'status':
+                            stmt = stmt.where(OriginalOrder.status == value)
+                        elif key == 'start_date':
+                            stmt = stmt.where(OriginalOrder.created_at >= value)
+                        elif key == 'end_date':
+                            stmt = stmt.where(OriginalOrder.created_at <= value)
+                        elif key == 'keyword':
+                            # 模糊搜索
+                            stmt = stmt.where(
+                                or_(
+                                    OriginalOrder.order_id.like(f'%{value}%'),
+                                    OriginalOrder.name.like(f'%{value}%'),
+                                    OriginalOrder.phone.like(f'%{value}%'),
+                                    OriginalOrder.email.like(f'%{value}%'),
                                 )
                             )
-                        elif value == 'high':
-                            query = query.filter(OriginalOrder.sensitivity_score >= 0.7)
+                        elif key == 'min_amount':
+                            stmt = stmt.where(OriginalOrder.total_amount >= value)
+                        elif key == 'max_amount':
+                            stmt = stmt.where(OriginalOrder.total_amount <= value)
+                        elif key == 'sensitivity_level':
+                            # 根据敏感度级别过滤
+                            if value == 'low':
+                                stmt = stmt.where(OriginalOrder.sensitivity_score < 0.3)
+                            elif value == 'medium':
+                                stmt = stmt.where(
+                                    and_(OriginalOrder.sensitivity_score >= 0.3, OriginalOrder.sensitivity_score < 0.7)
+                                )
+                            elif value == 'high':
+                                stmt = stmt.where(OriginalOrder.sensitivity_score >= 0.7)
+
+            # 获取总数
+            count_stmt = select(func.count()).select_from(stmt.subquery())
+            total_result = await db.execute(count_stmt)
+            total = total_result.scalar()
+
+            # 排序
+            if hasattr(OriginalOrder, order_by):
+                if order_direction.lower() == 'desc':
+                    stmt = stmt.order_by(desc(getattr(OriginalOrder, order_by)))
+                else:
+                    stmt = stmt.order_by(asc(getattr(OriginalOrder, order_by)))
+
+            # 分页
+            stmt = stmt.offset((page - 1) * size).limit(size)
+            result = await db.execute(stmt)
+            orders = result.scalars().all()
+
+            return list(orders), total
+
+        except Exception as e:
+            logger.error(f'Error getting order list: {str(e)}')
+            raise
+
+    @classmethod
+    async def update(cls, db: AsyncSession, order: OriginalOrder) -> OriginalOrder:
+        """
+        更新订单
         
-        # 获取总数
-        total = query.count()
-        
-        # 排序
-        if hasattr(OriginalOrder, order_by):
-            if order_direction.lower() == 'desc':
-                query = query.order_by(desc(getattr(OriginalOrder, order_by)))
-            else:
-                query = query.order_by(asc(getattr(OriginalOrder, order_by)))
-        
-        # 分页
-        orders = query.offset((page - 1) * size).limit(size).all()
-        
-        return orders, total
-    
-    async def update(self, order_id: int, update_data: Dict[str, Any]) -> Optional[OriginalOrder]:
-        """更新订单"""
-        session = await self.get_session()
+        :param db: orm对象
+        :param order: 订单对象
+        :return: 更新后的订单对象
+        """
         try:
-            order = session.query(OriginalOrder).filter(OriginalOrder.id == order_id).first()
-            if not order:
-                return None
-            
-            for key, value in update_data.items():
-                if hasattr(order, key):
-                    setattr(order, key, value)
-            
-            order.updated_at = datetime.now()
-            session.commit()
-            session.refresh(order)
+            order.updated_at = datetime.utcnow()
+            await db.flush()
+            await db.refresh(order)
             return order
         except Exception as e:
-            session.rollback()
-            raise e
-    
-    async def delete(self, order_id: int) -> bool:
-        """删除订单（物理删除）"""
-        session = await self.get_session()
+            logger.error(f'Error updating order {order.id}: {str(e)}')
+            raise
+
+    @classmethod
+    async def delete(cls, db: AsyncSession, order_id: int) -> bool:
+        """
+        删除订单（物理删除）
+        
+        :param db: orm对象
+        :param order_id: 订单ID
+        :return: 删除结果
+        """
         try:
-            order = session.query(OriginalOrder).filter(OriginalOrder.id == order_id).first()
+            stmt = select(OriginalOrder).where(OriginalOrder.id == order_id)
+            result = await db.execute(stmt)
+            order = result.scalar_one_or_none()
+
             if not order:
                 return False
-            
-            session.delete(order)
-            session.commit()
+
+            await db.delete(order)
             return True
         except Exception as e:
-            session.rollback()
-            raise e
-    
-    async def soft_delete(self, order_id: int) -> bool:
-        """软删除订单"""
-        return await self.update(order_id, {'status': 'deleted'}) is not None
-    
-    async def get_orders_by_user(self, user_id: str, page: int = 1, size: int = 10) -> Tuple[List[OriginalOrder], int]:
-        """获取用户的订单列表"""
-        return await self.get_list(
-            page=page, 
-            size=size, 
-            filters={'user_id': user_id}
-        )
-    
-    async def get_orders_by_status(self, status: str, page: int = 1, size: int = 10) -> Tuple[List[OriginalOrder], int]:
-        """根据状态获取订单列表"""
-        return await self.get_list(
-            page=page, 
-            size=size, 
-            filters={'status': status}
-        )
-    
-    async def get_sensitive_orders(self, threshold: float = 0.7, page: int = 1, size: int = 10) -> Tuple[List[OriginalOrder], int]:
-        """获取高敏感度订单"""
-        session = await self.get_session()
+            logger.error(f'Error deleting order {order_id}: {str(e)}')
+            raise
+
+    @classmethod
+    async def soft_delete(cls, db: AsyncSession, order_id: int) -> bool:
+        """
+        软删除订单
         
-        query = session.query(OriginalOrder).filter(
-            and_(
-                OriginalOrder.sensitivity_score >= threshold,
-                OriginalOrder.status != 'deleted'
+        :param db: orm对象
+        :param order_id: 订单ID
+        :return: 删除结果
+        """
+        try:
+            stmt = select(OriginalOrder).where(OriginalOrder.id == order_id)
+            result = await db.execute(stmt)
+            order = result.scalar_one_or_none()
+
+            if not order:
+                return False
+
+            order.status = 'deleted'
+            order.updated_at = datetime.utcnow()
+            return True
+        except Exception as e:
+            logger.error(f'Error soft deleting order {order_id}: {str(e)}')
+            raise
+
+    @classmethod
+    async def get_orders_by_user(cls, db: AsyncSession, user_id: str, page: int = 1, size: int = 10) -> Tuple[List[OriginalOrder], int]:
+        """
+        获取用户的订单列表
+        
+        :param db: orm对象
+        :param user_id: 用户ID
+        :param page: 页码
+        :param size: 每页数量
+        :return: 订单列表和总数
+        """
+        return await cls.get_list(db, page=page, size=size, filters={'user_id': user_id})
+
+    @classmethod
+    async def get_orders_by_status(cls, db: AsyncSession, status: str, page: int = 1, size: int = 10) -> Tuple[List[OriginalOrder], int]:
+        """
+        根据状态获取订单列表
+        
+        :param db: orm对象
+        :param status: 订单状态
+        :param page: 页码
+        :param size: 每页数量
+        :return: 订单列表和总数
+        """
+        return await cls.get_list(db, page=page, size=size, filters={'status': status})
+
+    @classmethod
+    async def get_sensitive_orders(
+        cls, db: AsyncSession, threshold: float = 0.7, page: int = 1, size: int = 10
+    ) -> Tuple[List[OriginalOrder], int]:
+        """
+        获取高敏感度订单
+        
+        :param db: orm对象
+        :param threshold: 敏感度阈值
+        :param page: 页码
+        :param size: 每页数量
+        :return: 订单列表和总数
+        """
+        try:
+            stmt = (
+                select(OriginalOrder)
+                .where(and_(OriginalOrder.sensitivity_score >= threshold, OriginalOrder.status != 'deleted'))
+                .order_by(desc(OriginalOrder.sensitivity_score))
             )
-        ).order_by(desc(OriginalOrder.sensitivity_score))
+
+            # 获取总数
+            count_stmt = select(func.count()).select_from(stmt.subquery())
+            total_result = await db.execute(count_stmt)
+            total = total_result.scalar()
+
+            # 分页
+            stmt = stmt.offset((page - 1) * size).limit(size)
+            result = await db.execute(stmt)
+            orders = result.scalars().all()
+
+            return list(orders), total
+
+        except Exception as e:
+            logger.error(f'Error getting sensitive orders: {str(e)}')
+            raise
+
+    @classmethod
+    async def get_statistics(cls, db: AsyncSession) -> Dict[str, Any]:
+        """
+        获取订单统计信息
         
-        total = query.count()
-        orders = query.offset((page - 1) * size).limit(size).all()
-        
-        return orders, total
-    
-    async def get_statistics(self) -> Dict[str, Any]:
-        """获取订单统计信息"""
-        session = await self.get_session()
-        
-        # 基础统计
-        total_orders = session.query(func.count(OriginalOrder.id)).filter(
-            OriginalOrder.status != 'deleted'
-        ).scalar()
-        
-        active_orders = session.query(func.count(OriginalOrder.id)).filter(
-            OriginalOrder.status == 'active'
-        ).scalar()
-        
-        encrypted_orders = session.query(func.count(OriginalOrder.id)).filter(
-            OriginalOrder.status == 'encrypted'
-        ).scalar()
-        
-        # 平均敏感度
-        avg_sensitivity = session.query(func.avg(OriginalOrder.sensitivity_score)).filter(
-            OriginalOrder.status != 'deleted'
-        ).scalar() or 0.0
-        
-        # 高风险订单数（敏感度 >= 0.7）
-        high_risk_orders = session.query(func.count(OriginalOrder.id)).filter(
-            and_(
-                OriginalOrder.sensitivity_score >= 0.7,
-                OriginalOrder.status != 'deleted'
+        :param db: orm对象
+        :return: 统计信息字典
+        """
+        try:
+            # 基础统计
+            total_stmt = select(func.count(OriginalOrder.id)).where(OriginalOrder.status != 'deleted')
+            total_result = await db.execute(total_stmt)
+            total_orders = total_result.scalar()
+
+            active_stmt = select(func.count(OriginalOrder.id)).where(OriginalOrder.status == 'active')
+            active_result = await db.execute(active_stmt)
+            active_orders = active_result.scalar()
+
+            encrypted_stmt = select(func.count(OriginalOrder.id)).where(OriginalOrder.status == 'encrypted')
+            encrypted_result = await db.execute(encrypted_stmt)
+            encrypted_orders = encrypted_result.scalar()
+
+            # 平均敏感度
+            avg_stmt = select(func.avg(OriginalOrder.sensitivity_score)).where(OriginalOrder.status != 'deleted')
+            avg_result = await db.execute(avg_stmt)
+            avg_sensitivity = avg_result.scalar() or 0.0
+
+            # 高风险订单数（敏感度 >= 0.7）
+            high_risk_stmt = select(func.count(OriginalOrder.id)).where(
+                and_(OriginalOrder.sensitivity_score >= 0.7, OriginalOrder.status != 'deleted')
             )
-        ).scalar()
-        
-        # 敏感度分布
-        sensitivity_distribution = {
-            'low': session.query(func.count(OriginalOrder.id)).filter(
-                and_(
-                    OriginalOrder.sensitivity_score < 0.3,
-                    OriginalOrder.status != 'deleted'
-                )
-            ).scalar(),
-            'medium': session.query(func.count(OriginalOrder.id)).filter(
+            high_risk_result = await db.execute(high_risk_stmt)
+            high_risk_orders = high_risk_result.scalar()
+
+            # 敏感度分布
+            low_stmt = select(func.count(OriginalOrder.id)).where(
+                and_(OriginalOrder.sensitivity_score < 0.3, OriginalOrder.status != 'deleted')
+            )
+            low_result = await db.execute(low_stmt)
+
+            medium_stmt = select(func.count(OriginalOrder.id)).where(
                 and_(
                     OriginalOrder.sensitivity_score >= 0.3,
                     OriginalOrder.sensitivity_score < 0.7,
-                    OriginalOrder.status != 'deleted'
+                    OriginalOrder.status != 'deleted',
                 )
-            ).scalar(),
-            'high': session.query(func.count(OriginalOrder.id)).filter(
-                and_(
-                    OriginalOrder.sensitivity_score >= 0.7,
-                    OriginalOrder.status != 'deleted'
-                )
-            ).scalar()
-        }
-        
-        # 每日订单数量（最近30天）
-        thirty_days_ago = datetime.now() - timedelta(days=30)
-        daily_stats = session.query(
-            func.date(OriginalOrder.created_at).label('date'),
-            func.count(OriginalOrder.id).label('count')
-        ).filter(
-            and_(
-                OriginalOrder.created_at >= thirty_days_ago,
-                OriginalOrder.status != 'deleted'
             )
-        ).group_by(func.date(OriginalOrder.created_at)).all()
-        
-        daily_stats_dict = [
-            {
-                'date': stat.date.strftime('%Y-%m-%d'),
-                'count': stat.count
+            medium_result = await db.execute(medium_stmt)
+
+            high_stmt = select(func.count(OriginalOrder.id)).where(
+                and_(OriginalOrder.sensitivity_score >= 0.7, OriginalOrder.status != 'deleted')
+            )
+            high_result = await db.execute(high_stmt)
+
+            sensitivity_distribution = {
+                'low': low_result.scalar(),
+                'medium': medium_result.scalar(),
+                'high': high_result.scalar(),
             }
-            for stat in daily_stats
-        ]
+
+            return {
+                'total_orders': total_orders,
+                'active_orders': active_orders,
+                'encrypted_orders': encrypted_orders,
+                'average_sensitivity': round(avg_sensitivity, 2),
+                'high_risk_orders': high_risk_orders,
+                'sensitivity_distribution': sensitivity_distribution,
+            }
+
+        except Exception as e:
+            logger.error(f'Error getting order statistics: {str(e)}')
+            raise
+
+    @classmethod
+    async def search_orders(cls, db: AsyncSession, keyword: str, page: int = 1, size: int = 10) -> Tuple[List[OriginalOrder], int]:
+        """
+        搜索订单
         
-        return {
-            'total_orders': total_orders,
-            'active_orders': active_orders,
-            'encrypted_orders': encrypted_orders,
-            'average_sensitivity': round(avg_sensitivity, 2),
-            'high_risk_orders': high_risk_orders,
-            'sensitivity_distribution': sensitivity_distribution,
-            'daily_stats': daily_stats_dict
-        }
-    
+        :param db: orm对象
+        :param keyword: 搜索关键词
+        :param page: 页码
+        :param size: 每页数量
+        :return: 订单列表和总数
+        """
+        return await cls.get_list(db, page=page, size=size, filters={'keyword': keyword})
+
+    @classmethod
+    async def get_orders_by_date_range(
+        cls, db: AsyncSession, start_date: datetime, end_date: datetime, page: int = 1, size: int = 10
+    ) -> Tuple[List[OriginalOrder], int]:
+        """
+        根据日期范围获取订单
+        
+        :param db: orm对象
+        :param start_date: 开始日期
+        :param end_date: 结束日期
+        :param page: 页码
+        :param size: 每页数量
+        :return: 订单列表和总数
+        """
+        return await cls.get_list(db, page=page, size=size, filters={'start_date': start_date, 'end_date': end_date})
+
+    @classmethod
+    async def get_total_count(cls, db: AsyncSession) -> int:
+        """
+        获取订单总数
+        
+        :param db: orm对象
+        :return: 订单总数
+        """
+        try:
+            stmt = select(func.count(OriginalOrder.id)).where(OriginalOrder.status != 'deleted')
+            result = await db.execute(stmt)
+            return result.scalar()
+        except Exception as e:
+            logger.error(f'Error getting total count: {str(e)}')
+            raise
+
     # 加密订单相关方法
-    async def create_encrypted_order(self, encrypted_order: EncryptedOrder) -> EncryptedOrder:
-        """创建加密订单"""
-        session = await self.get_session()
+    @classmethod
+    async def create_encrypted_order(cls, db: AsyncSession, encrypted_order: EncryptedOrder) -> EncryptedOrder:
+        """
+        创建加密订单
+        
+        :param db: orm对象
+        :param encrypted_order: 加密订单对象
+        :return: 创建的加密订单对象
+        """
         try:
-            session.add(encrypted_order)
-            session.commit()
-            session.refresh(encrypted_order)
+            db.add(encrypted_order)
+            await db.flush()
+            await db.refresh(encrypted_order)
             return encrypted_order
         except Exception as e:
-            session.rollback()
-            raise e
-    
-    async def get_encrypted_order_by_id(self, encrypted_order_id: int) -> Optional[EncryptedOrder]:
-        """根据ID获取加密订单"""
-        session = await self.get_session()
-        return session.query(EncryptedOrder).filter(
-            EncryptedOrder.id == encrypted_order_id
-        ).first()
-    
-    async def get_encrypted_order_by_original_id(self, original_order_id: int) -> Optional[EncryptedOrder]:
-        """根据原始订单ID获取加密订单"""
-        session = await self.get_session()
-        return session.query(EncryptedOrder).filter(
-            EncryptedOrder.original_order_id == original_order_id
-        ).first()
-    
-    async def get_encrypted_orders_list(self, page: int = 1, size: int = 10,
-                                       filters: Optional[Dict[str, Any]] = None) -> Tuple[List[EncryptedOrder], int]:
-        """获取加密订单列表"""
-        session = await self.get_session()
+            logger.error(f'Error creating encrypted order: {str(e)}')
+            raise
+
+    @classmethod
+    async def get_encrypted_order_by_id(cls, db: AsyncSession, encrypted_order_id: int) -> Optional[EncryptedOrder]:
+        """
+        根据ID获取加密订单
         
-        query = session.query(EncryptedOrder)
-        
-        # 应用过滤条件
-        if filters:
-            for key, value in filters.items():
-                if hasattr(EncryptedOrder, key) and value is not None:
-                    if key == 'status':
-                        query = query.filter(EncryptedOrder.status == value)
-                    elif key == 'algorithm':
-                        query = query.filter(EncryptedOrder.encryption_algorithm == value)
-                    elif key == 'start_date':
-                        query = query.filter(EncryptedOrder.created_at >= value)
-                    elif key == 'end_date':
-                        query = query.filter(EncryptedOrder.created_at <= value)
-        
-        # 获取总数
-        total = query.count()
-        
-        # 排序和分页
-        encrypted_orders = query.order_by(desc(EncryptedOrder.created_at)).offset(
-            (page - 1) * size
-        ).limit(size).all()
-        
-        return encrypted_orders, total
-    
-    async def update_encrypted_order(self, encrypted_order_id: int, 
-                                   update_data: Dict[str, Any]) -> Optional[EncryptedOrder]:
-        """更新加密订单"""
-        session = await self.get_session()
+        :param db: orm对象
+        :param encrypted_order_id: 加密订单ID
+        :return: 加密订单对象
+        """
         try:
-            encrypted_order = session.query(EncryptedOrder).filter(
-                EncryptedOrder.id == encrypted_order_id
-            ).first()
-            if not encrypted_order:
-                return None
-            
-            for key, value in update_data.items():
-                if hasattr(encrypted_order, key):
-                    setattr(encrypted_order, key, value)
-            
-            encrypted_order.updated_at = datetime.now()
-            session.commit()
-            session.refresh(encrypted_order)
-            return encrypted_order
+            stmt = select(EncryptedOrder).where(EncryptedOrder.id == encrypted_order_id)
+            result = await db.execute(stmt)
+            return result.scalar_one_or_none()
         except Exception as e:
-            session.rollback()
-            raise e
-    
-    async def search_orders(self, keyword: str, page: int = 1, size: int = 10) -> Tuple[List[OriginalOrder], int]:
-        """搜索订单"""
-        session = await self.get_session()
+            logger.error(f'Error getting encrypted order by id {encrypted_order_id}: {str(e)}')
+            raise
+
+    @classmethod
+    async def get_encrypted_order_by_original_id(cls, db: AsyncSession, original_order_id: int) -> Optional[EncryptedOrder]:
+        """
+        根据原始订单ID获取加密订单
         
-        query = session.query(OriginalOrder).filter(
-            and_(
-                OriginalOrder.status != 'deleted',
-                or_(
-                    OriginalOrder.order_id.like(f'%{keyword}%'),
-                    OriginalOrder.name.like(f'%{keyword}%'),
-                    OriginalOrder.phone.like(f'%{keyword}%'),
-                    OriginalOrder.email.like(f'%{keyword}%'),
-                    OriginalOrder.item_name.like(f'%{keyword}%')
-                )
-            )
-        ).order_by(desc(OriginalOrder.created_at))
-        
-        total = query.count()
-        orders = query.offset((page - 1) * size).limit(size).all()
-        
-        return orders, total
-    
-    async def get_orders_by_date_range(self, start_date: datetime, end_date: datetime,
-                                      page: int = 1, size: int = 10) -> Tuple[List[OriginalOrder], int]:
-        """根据日期范围获取订单"""
-        return await self.get_list(
-            page=page,
-            size=size,
-            filters={
-                'start_date': start_date,
-                'end_date': end_date
-            }
-        )
+        :param db: orm对象
+        :param original_order_id: 原始订单ID
+        :return: 加密订单对象
+        """
+        try:
+            stmt = select(EncryptedOrder).where(EncryptedOrder.original_order_id == original_order_id)
+            result = await db.execute(stmt)
+            return result.scalar_one_or_none()
+        except Exception as e:
+            logger.error(f'Error getting encrypted order by original_id {original_order_id}: {str(e)}')
+            raise

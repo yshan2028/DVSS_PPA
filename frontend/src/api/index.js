@@ -14,9 +14,9 @@ const pythonAPI = axios.create({
   }
 })
 
-// Go后端API (端口8080) - 专门处理Fabric
+// Go后端API (端口8001) - 专门处理Fabric
 const goAPI = axios.create({
-  baseURL: import.meta.env.VITE_GO_API_BASE_URL || '/fabric-api/v1',
+  baseURL: import.meta.env.VITE_GO_API_BASE_URL || '/fabric-api',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -87,37 +87,37 @@ goAPI.interceptors.response.use(
 
 // 认证相关
 export const authAPI = {
-  login: (username, password) => pythonAPI.post('/v1/auth/login', { username, password }),
-  register: (userData) => pythonAPI.post('/v1/auth/register', userData),
-  logout: () => pythonAPI.post('/v1/auth/logout'),
-  getCurrentUser: () => pythonAPI.get('/v1/auth/me'),
-  refreshToken: () => pythonAPI.post('/v1/auth/refresh'),
-  getRoles: () => pythonAPI.get('/v1/auth/roles'),
-  getUsers: () => pythonAPI.get('/v1/auth/users'),
-  getUserPermissions: (userId) => pythonAPI.get(`/v1/auth/user/${userId}/permissions`)
+  login: (username, password) => pythonAPI.post('/auth/login', { username, password }),
+  register: (userData) => pythonAPI.post('/auth/register', userData),
+  logout: () => pythonAPI.post('/auth/logout'),
+  getCurrentUser: () => pythonAPI.get('/auth/me'),
+  refreshToken: () => pythonAPI.post('/auth/refresh'),
+  getRoles: () => pythonAPI.get('/auth/roles'),
+  getUsers: () => pythonAPI.get('/auth/users'),
+  getUserPermissions: (userId) => pythonAPI.get(`/auth/user/${userId}/permissions`)
 }
 
 // DVSS 分析相关
 export const dvssAPI = {
-  analyzeOrder: (orderData) => pythonAPI.post('/v1/dvss/analyze', orderData),
-  batchAnalyzeOrders: (batchData) => pythonAPI.post('/v1/dvss/batch-analyze', batchData),
-  getSensitivityTrends: (params) => pythonAPI.get('/v1/dvss/trends', { params }),
-  getDashboard: () => pythonAPI.get('/v1/dvss/dashboard'),
-  healthCheck: () => pythonAPI.get('/v1/dvss/health'),
+  analyzeOrder: (orderData) => pythonAPI.post('/dvss/analyze', orderData),
+  batchAnalyzeOrders: (batchData) => pythonAPI.post('/dvss/batch-analyze', batchData),
+  getSensitivityTrends: (params) => pythonAPI.get('/dvss/trends', { params }),
+  getDashboard: () => pythonAPI.get('/dvss/dashboard'),
+  healthCheck: () => pythonAPI.get('/dvss/health'),
 }
 
 // 数据管理相关
 export const dataAPI = {
   // 订单管理
-  getOrders: (params) => pythonAPI.get('/v1/orders', { params }),
-  getOrder: (orderId) => pythonAPI.get(`/v1/orders/${orderId}`),
-  createOrder: (orderData) => pythonAPI.post('/v1/orders', orderData),
-  updateOrder: (orderId, orderData) => pythonAPI.put(`/v1/orders/${orderId}`, orderData),
-  deleteOrder: (orderId) => pythonAPI.delete(`/v1/orders/${orderId}`),
+  getOrders: (params) => pythonAPI.get('/orders', { params }),
+  getOrder: (orderId) => pythonAPI.get(`/orders/${orderId}`),
+  createOrder: (orderData) => pythonAPI.post('/orders', orderData),
+  updateOrder: (orderId, orderData) => pythonAPI.put(`/orders/${orderId}`, orderData),
+  deleteOrder: (orderId) => pythonAPI.delete(`/orders/${orderId}`),
   
   // 通用数据查询
-  query: (dataId, userId) => pythonAPI.get(`/v1/data/query/${dataId}?user_id=${userId}`),
-  getAllData: () => pythonAPI.get('/v1/data/debug/all')
+  query: (dataId, userId) => pythonAPI.get(`/data/query/${dataId}?user_id=${userId}`),
+  getAllData: () => pythonAPI.get('/data/debug/all')
 }
 
 // 加密相关
@@ -154,11 +154,11 @@ export const monitoringAPI = {
 
 // 审计相关
 export const auditAPI = {
-  logEvent: (eventData) => goAPI.post('/audit/log', eventData),
-  getAuditHistory: (params) => goAPI.get('/audit/history', { params }),
-  getAuditLogs: (params) => goAPI.get('/v1/audit/logs', { params }),
-  getAuditStats: () => goAPI.get('/v1/audit/stats'),
-  exportAuditLogs: (params) => goAPI.get('/v1/audit/export', { params }),
+  logEvent: (eventData) => goAPI.post('/api/v1/fabric/audit/log', eventData),
+  getAuditHistory: (params) => goAPI.get('/api/v1/fabric/audit/history', { params }),
+  getAuditLogs: (params) => goAPI.get('/api/v1/fabric/audit/logs', { params }),
+  getAuditStats: () => goAPI.get('/api/v1/fabric/audit/stats'),
+  exportAuditLogs: (params) => goAPI.get('/api/v1/fabric/audit/export', { params }),
 }
 
 // 区块链相关

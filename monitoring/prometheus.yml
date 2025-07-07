@@ -6,15 +6,12 @@ scrape_configs:
   - job_name: 'python-backend'
     static_configs:
       - targets: ['backend-python:8000']
-    
   - job_name: 'go-backend'
     static_configs:
       - targets: ['backend-go:8001']
-    
-  - job_name: 'postgres'
+  - job_name: 'mysql'
     static_configs:
-      - targets: ['postgres:5432']
-    
+      - targets: ['mysql:3306']
   - job_name: 'redis'
     static_configs:
       - targets: ['redis:6379']
