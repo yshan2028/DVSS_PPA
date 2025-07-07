@@ -88,7 +88,7 @@ services:
       MYSQL_DATABASE: dvss_db
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./scripts/init-mysql-correct.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./scripts/init-mysql.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "3306:3306"
     networks:

@@ -29,16 +29,12 @@ logger = LogUtil.get_logger(__name__)
 
 
 async def init_database():
-    """异步初始化数据库"""
+    """异步初始化数据库表结构"""
     try:
-        # 异步创建数据库表
+        # 异步创建数据库表结构（数据初始化由SQL脚本完成）
         await init_create_table()
-        logger.info('✅ 数据库表已就绪')
-        
-        # 异步初始化数据（创建默认角色和用户）
-        from scripts.init_db import init_database as init_data
-        await init_data()
-        logger.info('✅ 数据库数据初始化完成')
+        logger.info('✅ 数据库表结构已就绪')
+        logger.info('📋 演示数据初始化由MySQL初始化脚本完成')
         
     except Exception as exc:
         logger.exception('❌ 数据库初始化失败', exc_info=exc)
