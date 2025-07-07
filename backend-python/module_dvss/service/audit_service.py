@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
 from exceptions.custom_exception import DVSSException
-
 from module_dvss.dao.log_dao import LogDAO
 from module_dvss.entity.operation_log import OperationLog
 from module_dvss.schemas.log_schema import (

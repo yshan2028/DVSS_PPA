@@ -8,7 +8,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=mysql+pymysql://root:admin123@mysql:3306/dvss_db
+      - DATABASE_URL=mysql+asyncmy://root:admin123@mysql:3306/dvss_db
       - MONGODB_URL=mongodb://root:admin123@mongo:27017
       - REDIS_HOST=redis
       - REDIS_PASSWORD=admin123
@@ -32,7 +32,7 @@ services:
     build:
       context: ./backend-go
       dockerfile: Dockerfile
-    container_name: dvss-go-backend
+    container_name: dvss-backend-go
     ports:
       - "8001:8001"
     environment:
@@ -88,7 +88,7 @@ services:
       MYSQL_DATABASE: dvss_db
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./scripts/init-mysql.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./scripts/init-mysql-correct.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "3306:3306"
     networks:

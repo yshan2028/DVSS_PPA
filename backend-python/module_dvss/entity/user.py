@@ -5,10 +5,9 @@
 from datetime import datetime
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-Base = declarative_base()
+from config.database import Base
 
 
 class User(Base):
@@ -19,9 +18,8 @@ class User(Base):
     email = Column(String(100), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     full_name = Column(String(100))
-    phone = Column(String(20))
+    department = Column(String(50))
     is_active = Column(Boolean, default=True)
-    is_superuser = Column(Boolean, default=False)
     role_id = Column(Integer, ForeignKey('roles.id'))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

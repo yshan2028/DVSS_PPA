@@ -6,8 +6,9 @@
 import hashlib
 import json
 import uuid
+
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List
 
 
 class CommonUtil:
@@ -23,7 +24,7 @@ class CommonUtil:
         """生成短ID"""
         import secrets
         import string
-        
+
         chars = string.ascii_letters + string.digits
         return ''.join(secrets.choice(chars) for _ in range(length))
 
@@ -75,7 +76,7 @@ class CommonUtil:
         """扁平化字典"""
         items = []
         for k, v in d.items():
-            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+            new_key = f'{parent_key}{sep}{k}' if parent_key else k
             if isinstance(v, dict):
                 items.extend(CommonUtil.flatten_dict(v, new_key, sep=sep).items())
             else:
@@ -96,7 +97,7 @@ class CommonUtil:
     @staticmethod
     def chunk_list(lst: List[Any], chunk_size: int) -> List[List[Any]]:
         """将列表分块"""
-        return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
+        return [lst[i : i + chunk_size] for i in range(0, len(lst), chunk_size)]
 
     @staticmethod
     def remove_none_values(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -107,7 +108,7 @@ class CommonUtil:
     def convert_to_snake_case(camel_str: str) -> str:
         """驼峰转下划线"""
         import re
-        
+
         s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', camel_str)
         return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
@@ -118,39 +119,38 @@ class CommonUtil:
         return components[0] + ''.join(x.capitalize() for x in components[1:])
 
     @staticmethod
-    def mask_sensitive_data(data: str, mask_char: str = '*', 
-                          start_visible: int = 2, end_visible: int = 2) -> str:
+    def mask_sensitive_data(data: str, mask_char: str = '*', start_visible: int = 2, end_visible: int = 2) -> str:
         """脱敏敏感数据"""
         if not data or len(data) <= start_visible + end_visible:
             return mask_char * len(data) if data else ''
-        
+
         start = data[:start_visible]
         end = data[-end_visible:] if end_visible > 0 else ''
         middle = mask_char * (len(data) - start_visible - end_visible)
-        
+
         return start + middle + end
 
     @staticmethod
     def parse_size(size_str: str) -> int:
         """解析大小字符串，返回字节数"""
         size_str = size_str.strip().upper()
-        
+
         multipliers = {
             'B': 1,
             'KB': 1024,
-            'MB': 1024 ** 2,
-            'GB': 1024 ** 3,
-            'TB': 1024 ** 4,
+            'MB': 1024**2,
+            'GB': 1024**3,
+            'TB': 1024**4,
         }
-        
+
         for suffix, multiplier in multipliers.items():
             if size_str.endswith(suffix):
                 try:
-                    number = float(size_str[:-len(suffix)])
+                    number = float(size_str[: -len(suffix)])
                     return int(number * multiplier)
                 except ValueError:
                     break
-        
+
         # 如果没有后缀，假设是字节
         try:
             return int(size_str)
@@ -161,14 +161,14 @@ class CommonUtil:
     def format_size(size_bytes: int) -> str:
         """格式化文件大小"""
         if size_bytes == 0:
-            return "0B"
-        
+            return '0B'
+
         for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
             if size_bytes < 1024.0:
-                return f"{size_bytes:.1f}{unit}"
+                return f'{size_bytes:.1f}{unit}'
             size_bytes /= 1024.0
-        
-        return f"{size_bytes:.1f}PB"
+
+        return f'{size_bytes:.1f}PB'
 
     @staticmethod
     def get_client_ip(headers: Dict[str, str]) -> str:
@@ -179,7 +179,7 @@ class CommonUtil:
                 ip = headers[header].split(',')[0].strip()
                 if ip:
                     return ip
-        
+
         # 返回默认值
         return headers.get('Host', 'unknown')
 
@@ -188,11 +188,11 @@ class CommonUtil:
         """截断字符串"""
         if len(text) <= max_length:
             return text
-        
+
         if len(suffix) >= max_length:
             return suffix[:max_length]
-        
-        return text[:max_length - len(suffix)] + suffix
+
+        return text[: max_length - len(suffix)] + suffix
 
     @staticmethod
     def validate_json(json_str: str) -> bool:
@@ -209,13 +209,13 @@ class CommonUtil:
         return int(datetime.now().timestamp() * 1000)
 
     @staticmethod
-    def format_timestamp(timestamp: Union[int, float], format_str: str = '%Y-%m-%d %H:%M:%S') -> str:
+    def format_timestamp(timestamp: int | float, format_str: str = '%Y-%m-%d %H:%M:%S') -> str:
         """格式化时间戳"""
         try:
             # 如果是毫秒时间戳，转换为秒
             if timestamp > 10**10:
                 timestamp = timestamp / 1000
-            
+
             dt = datetime.fromtimestamp(timestamp)
             return dt.strftime(format_str)
         except (ValueError, OSError):
@@ -225,7 +225,7 @@ class CommonUtil:
     def sanitize_filename(filename: str) -> str:
         """清理文件名，移除不安全字符"""
         import re
-        
+
         # 移除或替换不安全字符
         sanitized = re.sub(r'[<>:"/\\|?*]', '_', filename)
         # 移除控制字符
@@ -238,7 +238,7 @@ class CommonUtil:
         """批量处理数据"""
         results = []
         for i in range(0, len(items), batch_size):
-            batch = items[i:i + batch_size]
+            batch = items[i : i + batch_size]
             batch_results = processor_func(batch)
             if isinstance(batch_results, list):
                 results.extend(batch_results)

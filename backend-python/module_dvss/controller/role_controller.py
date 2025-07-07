@@ -141,9 +141,7 @@ async def set_role_permissions(
     return ResponseUtil.success(permission_responses, '角色权限设置成功')
 
 
-@router.get(
-    '/{role_id}/permissions', response_model=ApiResponse[List[RolePermissionResponse]], summary='获取角色权限'
-)
+@router.get('/{role_id}/permissions', response_model=ApiResponse[List[RolePermissionResponse]], summary='获取角色权限')
 async def get_role_permissions(
     role_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
 ):

@@ -3,13 +3,13 @@
 提供数据库会话、认证等依赖
 """
 
-from typing import Generator, Optional
+from typing import AsyncGenerator, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from config.database import SessionLocal
+from config.database import get_db
 from exceptions.custom_exception import AuthenticationError, AuthorizationError
 from module_dvss.entity.user import User
 from module_dvss.service.auth_service import AuthService
@@ -17,22 +17,9 @@ from module_dvss.service.auth_service import AuthService
 security = HTTPBearer()
 
 
-def get_db() -> Generator[Session, None, None]:
-    """获取数据库会话"""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-def get_db_session() -> Session:
-    """获取数据库会话对象（非生成器版本）"""
-    return SessionLocal()
-
-
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)
+    credentials: HTTPAuthorizationCredentials = Depends(security), 
+    db: AsyncSession = Depends(get_db)
 ) -> User:
     """
     获取当前用户
@@ -103,8 +90,9 @@ async def get_admin_user(current_user: User = Depends(get_current_active_user)) 
     return current_user
 
 
-def get_optional_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security), db: Session = Depends(get_db)
+async def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security), 
+    db: AsyncSession = Depends(get_db)
 ) -> Optional[User]:
     """
     获取可选的当前用户（用于不需要强制认证的接口）
@@ -122,6 +110,6 @@ def get_optional_user(
     try:
         token = credentials.credentials
         auth_service = AuthService(db)
-        return auth_service.verify_token(token)
+        return await auth_service.verify_token(token)
     except Exception:
         return None

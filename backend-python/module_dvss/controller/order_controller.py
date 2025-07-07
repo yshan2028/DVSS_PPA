@@ -10,8 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config.get_db import get_db
 from core.deps import get_current_user
 from module_dvss.entity.user import User
-from utils.response_util import PageResponse, ResponseUtil
-
 from module_dvss.schemas.common_schema import ApiResponse
 from module_dvss.schemas.order_schema import (
     EncryptedOrderResponse,
@@ -22,15 +20,14 @@ from module_dvss.schemas.order_schema import (
     OrderUpdate,
 )
 from module_dvss.service.order_service import OrderService
+from utils.response_util import PageResponse, ResponseUtil
 
 router = APIRouter(prefix='/api/v1/orders', tags=['订单管理'])
 
 
 @router.post('', response_model=ApiResponse[None])
 async def create_order(
-    order_data: OrderCreate, 
-    db: AsyncSession = Depends(get_db), 
-    current_user: User = Depends(get_current_user)
+    order_data: OrderCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """创建原始订单"""
     try:
@@ -56,7 +53,7 @@ async def get_orders(
             filters['status'] = status
         if user_id:
             filters['user_id'] = user_id
-            
+
         orders, total = await OrderService.get_order_list_services(db, page, size, current_user.id, filters)
         result = PageResponse(items=orders, total=total, page=page, size=size)
         return ResponseUtil.success(data=result, message='获取订单列表成功')
@@ -98,7 +95,9 @@ async def update_order(
 
 
 @router.delete('/{order_id}')
-async def delete_order(order_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def delete_order(
+    order_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
+):
     """删除订单"""
     try:
         result = await OrderService.delete_order_services(db, order_id, current_user.id)

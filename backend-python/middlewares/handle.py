@@ -12,6 +12,6 @@ def handle_middleware(app: FastAPI) -> None:
     """统一加载所有中间件"""
     # 添加CORS中间件
     setup_cors(app)
-    
+
     # 添加Gzip压缩中间件
     add_gzip_middleware(app)

@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 
 import pandas as pd
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from exceptions.custom_exception import AuthorizationError, ValidationError
 from module_dvss.dao.field_dao import FieldDAO
@@ -33,7 +33,7 @@ logger = LogUtil.get_logger('dvss_service')
 class DVSSService:
     """DVSS核心服务"""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
         self.order_dao = OrderDAO(db)
         self.shard_dao = ShardDAO(db)
@@ -134,9 +134,7 @@ class DVSSService:
                 user_id=current_user_id, query_params=request.dict(), result_count=len(orders)
             )
 
-            return PageResponse(
-                items=decrypted_orders, total=total, page=request.page.page, size=request.page.size
-            )
+            return PageResponse(items=decrypted_orders, total=total, page=request.page.page, size=request.page.size)
 
         except Exception as e:
             logger.error(f'订单查询失败: {str(e)}')

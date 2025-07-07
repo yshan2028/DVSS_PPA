@@ -6396,3 +6396,555 @@ exceptions.custom_exception.AuthenticationError: 登录失败
 2025-07-06 18:38:15 - exception_handler - WARNING - handle.py:116 - Starlette HTTP Exception: Not Found
 2025-07-06 18:38:30 - exception_handler - WARNING - handle.py:116 - Starlette HTTP Exception: Not Found
 2025-07-06 18:38:34 - server - INFO - server.py:41 - 👋 应用关闭完成
+2025-07-07 10:21:52 - server - INFO - server.py:36 - 🚀 启动 DVSS-PPA 应用...
+2025-07-07 10:21:52 - server - ERROR - server.py:43 - ❌ 数据库初始化失败
+Traceback (most recent call last):
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/server.py", line 40, in lifespan
+    Base.metadata.create_all(bind=engine)
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py", line 5924, in create_all
+    bind._run_ddl_visitor(
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3247, in _run_ddl_visitor
+    with self.begin() as conn:
+  File "/Users/liuyue/.pyenv/versions/3.12.3/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3237, in begin
+    with self.connect() as conn:
+         ^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3273, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 145, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3297, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+    self.__connect()
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+    with util.safe_reraise():
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 625, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/mysql/asyncmy.py", line 286, in connect
+    await_only(creator_fn(*arg, **kw)),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/util/concurrency.py", line 90, in await_only
+    _not_implemented()
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/util/concurrency.py", line 79, in _not_implemented
+    raise ValueError(
+ValueError: the greenlet library is required to use this function. No module named 'greenlet'
+2025-07-07 10:21:52 - server - INFO - server.py:45 - ✅ DVSS-PPA启动成功
+2025-07-07 10:22:24 - server - INFO - server.py:49 - 👋 应用关闭完成
+2025-07-07 10:22:25 - server - INFO - server.py:36 - 🚀 启动 DVSS-PPA 应用...
+2025-07-07 10:22:25 - server - ERROR - server.py:43 - ❌ 数据库初始化失败
+Traceback (most recent call last):
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/server.py", line 40, in lifespan
+    Base.metadata.create_all(bind=engine)
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py", line 5924, in create_all
+    bind._run_ddl_visitor(
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3247, in _run_ddl_visitor
+    with self.begin() as conn:
+  File "/Users/liuyue/.pyenv/versions/3.12.3/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3237, in begin
+    with self.connect() as conn:
+         ^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3273, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 145, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3297, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+    self.__connect()
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+    with util.safe_reraise():
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 625, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/mysql/asyncmy.py", line 286, in connect
+    await_only(creator_fn(*arg, **kw)),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 123, in await_only
+    raise exc.MissingGreenlet(
+sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+2025-07-07 10:22:25 - server - INFO - server.py:45 - ✅ DVSS-PPA启动成功
+2025-07-07 10:22:37 - server - INFO - server.py:49 - 👋 应用关闭完成
+2025-07-07 10:22:39 - server - INFO - server.py:36 - 🚀 启动 DVSS-PPA 应用...
+2025-07-07 10:22:39 - server - ERROR - server.py:43 - ❌ 数据库初始化失败
+Traceback (most recent call last):
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/server.py", line 40, in lifespan
+    Base.metadata.create_all(bind=engine)
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py", line 5924, in create_all
+    bind._run_ddl_visitor(
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3247, in _run_ddl_visitor
+    with self.begin() as conn:
+  File "/Users/liuyue/.pyenv/versions/3.12.3/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3237, in begin
+    with self.connect() as conn:
+         ^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3273, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 145, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3297, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+    self.__connect()
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+    with util.safe_reraise():
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 625, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/mysql/asyncmy.py", line 286, in connect
+    await_only(creator_fn(*arg, **kw)),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/liuyue/code/dvss-ppa-implementation/backend-python/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 123, in await_only
+    raise exc.MissingGreenlet(
+sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+2025-07-07 10:22:39 - server - INFO - server.py:45 - ✅ DVSS-PPA启动成功
+2025-07-07 10:24:10 - server - INFO - server.py:49 - 👋 应用关闭完成
+2025-07-07 02:34:20 - server - INFO - server.py:36 - 🚀 启动 DVSS-PPA 应用...
+2025-07-07 02:34:20 - server - ERROR - server.py:43 - ❌ 数据库初始化失败
+Traceback (most recent call last):
+  File "/app/server.py", line 40, in lifespan
+    Base.metadata.create_all(bind=engine)
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/schema.py", line 5924, in create_all
+    bind._run_ddl_visitor(
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3247, in _run_ddl_visitor
+    with self.begin() as conn:
+         ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3237, in begin
+    with self.connect() as conn:
+         ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3273, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 145, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3297, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+    self.__connect()
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 625, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/dialects/mysql/asyncmy.py", line 286, in connect
+    await_only(creator_fn(*arg, **kw)),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 123, in await_only
+    raise exc.MissingGreenlet(
+sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+2025-07-07 02:34:20 - server - INFO - server.py:45 - ✅ DVSS-PPA启动成功
+2025-07-07 02:38:39 - server - INFO - server.py:49 - 👋 应用关闭完成
+2025-07-07 02:50:59 - server - INFO - server.py:53 - 🚀 启动 DVSS-PPA 应用...
+2025-07-07 02:50:59 - database - INFO - database.py:47 - 异步初始化数据库连接...
+2025-07-07 02:50:59 - server - ERROR - server.py:44 - ❌ 数据库初始化失败
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1963, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 943, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/dialects/mysql/asyncmy.py", line 95, in execute
+    return self.await_(self._execute_async(operation, parameters))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/dialects/mysql/asyncmy.py", line 107, in _execute_async
+    result = await self._cursor.execute(operation, parameters)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncmy/cursors.pyx", line 179, in execute
+  File "asyncmy/cursors.pyx", line 364, in _query
+  File "asyncmy/connection.pyx", line 496, in query
+  File "asyncmy/connection.pyx", line 684, in _read_query_result
+  File "asyncmy/connection.pyx", line 1071, in read
+  File "asyncmy/connection.pyx", line 646, in read_packet
+  File "asyncmy/protocol.pyx", line 190, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/protocol.pyx", line 194, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/errors.pyx", line 128, in asyncmy.errors.raise_mysql_exception
+  File "asyncmy/errors.pyx", line 137, in asyncmy.errors.raise_mysql_exception
+asyncmy.errors.OperationalError: (3780, "Referencing column 'user_id' and referenced column 'id' in foreign key constraint 'operation_logs_ibfk_1' are incompatible.")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/server.py", line 35, in init_database
+    await init_create_table()
+  File "/app/config/database.py", line 50, in init_create_table
+    await conn.run_sync(Base.metadata.create_all)
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py", line 887, in run_sync
+    return await greenlet_spawn(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/schema.py", line 5924, in create_all
+    bind._run_ddl_visitor(
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2455, in _run_ddl_visitor
+    ).traverse_single(element)
+      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/visitors.py", line 664, in traverse_single
+    return meth(obj, **kw)
+           ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/ddl.py", line 982, in visit_metadata
+    self.traverse_single(
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/visitors.py", line 664, in traverse_single
+    return meth(obj, **kw)
+           ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/ddl.py", line 1020, in visit_table
+    )._invoke_with(self.connection)
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/ddl.py", line 321, in _invoke_with
+    return bind.execute(self)
+           ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1415, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/ddl.py", line 187, in _execute_on_connection
+    return connection._execute_ddl(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1526, in _execute_ddl
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1842, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1982, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2351, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1963, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 943, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/dialects/mysql/asyncmy.py", line 95, in execute
+    return self.await_(self._execute_async(operation, parameters))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/dialects/mysql/asyncmy.py", line 107, in _execute_async
+    result = await self._cursor.execute(operation, parameters)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncmy/cursors.pyx", line 179, in execute
+  File "asyncmy/cursors.pyx", line 364, in _query
+  File "asyncmy/connection.pyx", line 496, in query
+  File "asyncmy/connection.pyx", line 684, in _read_query_result
+  File "asyncmy/connection.pyx", line 1071, in read
+  File "asyncmy/connection.pyx", line 646, in read_packet
+  File "asyncmy/protocol.pyx", line 190, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/protocol.pyx", line 194, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/errors.pyx", line 128, in asyncmy.errors.raise_mysql_exception
+  File "asyncmy/errors.pyx", line 137, in asyncmy.errors.raise_mysql_exception
+sqlalchemy.exc.OperationalError: (asyncmy.errors.OperationalError) (3780, "Referencing column 'user_id' and referenced column 'id' in foreign key constraint 'operation_logs_ibfk_1' are incompatible.")
+[SQL: 
+CREATE TABLE operation_logs (
+	id INTEGER NOT NULL COMMENT '主键ID' AUTO_INCREMENT, 
+	user_id INTEGER COMMENT '操作用户ID', 
+	operation_type VARCHAR(50) NOT NULL COMMENT '操作类型', 
+	resource_type VARCHAR(50) NOT NULL COMMENT '资源类型', 
+	resource_id VARCHAR(100) COMMENT '资源ID', 
+	operation_detail TEXT COMMENT '操作详情(JSON)', 
+	ip_address VARCHAR(45) COMMENT 'IP地址', 
+	user_agent TEXT COMMENT '用户代理', 
+	status VARCHAR(20) NOT NULL COMMENT '状态', 
+	error_message TEXT COMMENT '错误信息', 
+	created_at DATETIME COMMENT '创建时间' DEFAULT (now()), 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(user_id) REFERENCES users (id)
+)
+
+]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-07-07 02:59:46 - server - INFO - server.py:53 - 🚀 启动 DVSS-PPA 应用...
+2025-07-07 02:59:46 - database - INFO - database.py:47 - 异步初始化数据库连接...
+2025-07-07 02:59:46 - server - ERROR - server.py:44 - ❌ 数据库初始化失败
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1963, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 943, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/dialects/mysql/asyncmy.py", line 95, in execute
+    return self.await_(self._execute_async(operation, parameters))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/dialects/mysql/asyncmy.py", line 107, in _execute_async
+    result = await self._cursor.execute(operation, parameters)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncmy/cursors.pyx", line 179, in execute
+  File "asyncmy/cursors.pyx", line 364, in _query
+  File "asyncmy/connection.pyx", line 496, in query
+  File "asyncmy/connection.pyx", line 684, in _read_query_result
+  File "asyncmy/connection.pyx", line 1071, in read
+  File "asyncmy/connection.pyx", line 646, in read_packet
+  File "asyncmy/protocol.pyx", line 190, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/protocol.pyx", line 194, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/errors.pyx", line 128, in asyncmy.errors.raise_mysql_exception
+  File "asyncmy/errors.pyx", line 137, in asyncmy.errors.raise_mysql_exception
+asyncmy.errors.OperationalError: (3780, "Referencing column 'user_id' and referenced column 'id' in foreign key constraint 'operation_logs_ibfk_1' are incompatible.")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/server.py", line 35, in init_database
+    await init_create_table()
+  File "/app/config/database.py", line 50, in init_create_table
+    await conn.run_sync(Base.metadata.create_all)
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py", line 887, in run_sync
+    return await greenlet_spawn(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/schema.py", line 5924, in create_all
+    bind._run_ddl_visitor(
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2455, in _run_ddl_visitor
+    ).traverse_single(element)
+      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/visitors.py", line 664, in traverse_single
+    return meth(obj, **kw)
+           ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/ddl.py", line 982, in visit_metadata
+    self.traverse_single(
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/visitors.py", line 664, in traverse_single
+    return meth(obj, **kw)
+           ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/ddl.py", line 1020, in visit_table
+    )._invoke_with(self.connection)
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/ddl.py", line 321, in _invoke_with
+    return bind.execute(self)
+           ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1415, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/ddl.py", line 187, in _execute_on_connection
+    return connection._execute_ddl(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1526, in _execute_ddl
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1842, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1982, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2351, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1963, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 943, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/dialects/mysql/asyncmy.py", line 95, in execute
+    return self.await_(self._execute_async(operation, parameters))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/dialects/mysql/asyncmy.py", line 107, in _execute_async
+    result = await self._cursor.execute(operation, parameters)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncmy/cursors.pyx", line 179, in execute
+  File "asyncmy/cursors.pyx", line 364, in _query
+  File "asyncmy/connection.pyx", line 496, in query
+  File "asyncmy/connection.pyx", line 684, in _read_query_result
+  File "asyncmy/connection.pyx", line 1071, in read
+  File "asyncmy/connection.pyx", line 646, in read_packet
+  File "asyncmy/protocol.pyx", line 190, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/protocol.pyx", line 194, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/errors.pyx", line 128, in asyncmy.errors.raise_mysql_exception
+  File "asyncmy/errors.pyx", line 137, in asyncmy.errors.raise_mysql_exception
+sqlalchemy.exc.OperationalError: (asyncmy.errors.OperationalError) (3780, "Referencing column 'user_id' and referenced column 'id' in foreign key constraint 'operation_logs_ibfk_1' are incompatible.")
+[SQL: 
+CREATE TABLE operation_logs (
+	id INTEGER NOT NULL COMMENT '主键ID' AUTO_INCREMENT, 
+	user_id INTEGER COMMENT '操作用户ID', 
+	operation_type VARCHAR(50) NOT NULL COMMENT '操作类型', 
+	resource_type VARCHAR(50) NOT NULL COMMENT '资源类型', 
+	resource_id VARCHAR(100) COMMENT '资源ID', 
+	operation_detail TEXT COMMENT '操作详情(JSON)', 
+	ip_address VARCHAR(45) COMMENT 'IP地址', 
+	user_agent TEXT COMMENT '用户代理', 
+	status VARCHAR(20) NOT NULL COMMENT '状态', 
+	error_message TEXT COMMENT '错误信息', 
+	created_at DATETIME COMMENT '创建时间' DEFAULT (now()), 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(user_id) REFERENCES users (id)
+)
+
+]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-07-07 03:06:19 - server - INFO - server.py:53 - 🚀 启动 DVSS-PPA 应用...
+2025-07-07 03:06:19 - database - INFO - database.py:47 - 异步初始化数据库连接...
+2025-07-07 03:06:19 - database - INFO - database.py:52 - 数据库表创建完成
+2025-07-07 03:06:19 - server - INFO - server.py:36 - ✅ 数据库表已就绪
+2025-07-07 03:06:19 - server - ERROR - server.py:44 - ❌ 数据库初始化失败
+Traceback (most recent call last):
+  File "/app/server.py", line 40, in init_database
+    await init_data()
+  File "/app/scripts/init_db.py", line 139, in init_database
+    await create_default_roles()
+  File "/app/scripts/init_db.py", line 73, in create_default_roles
+    role = Role(**role_data)
+           ^^^^^^^^^^^^^^^^^
+  File "<string>", line 4, in __init__
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/orm/state.py", line 571, in _initialize_instance
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/orm/state.py", line 569, in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+  File "/usr/local/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py", line 2173, in _declarative_constructor
+    raise TypeError(
+TypeError: 'display_name' is an invalid keyword argument for Role
+2025-07-07 03:07:51 - server - INFO - server.py:53 - 🚀 启动 DVSS-PPA 应用...
+2025-07-07 03:07:51 - database - INFO - database.py:47 - 异步初始化数据库连接...
+2025-07-07 03:07:51 - database - INFO - database.py:52 - 数据库表创建完成
+2025-07-07 03:07:51 - server - INFO - server.py:36 - ✅ 数据库表已就绪
+2025-07-07 03:07:51 - server - INFO - server.py:41 - ✅ 数据库数据初始化完成
+2025-07-07 03:07:51 - server - INFO - server.py:58 - ✅ DVSS-PPA启动成功
+2025-07-07 03:08:25 - exception_handler - WARNING - handle.py:91 - Starlette HTTP Exception: Not Found

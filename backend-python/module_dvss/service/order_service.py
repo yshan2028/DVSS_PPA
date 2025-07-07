@@ -8,18 +8,16 @@ from typing import Dict, List, Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from exceptions.custom_exception import ServiceException
-from utils.response_util import PageResponse
 from module_dvss.dao.order_dao import OrderDAO
-from utils.log_util import LogUtil
-from module_dvss.schemas.common_schema import CrudResponseModel
-
 from module_dvss.entity.original_order import OriginalOrder
+from module_dvss.schemas.common_schema import CrudResponseModel
 from module_dvss.schemas.order_schema import (
     OrderCreate,
     OrderResponse,
-    OrderUpdate,
     OrderStatistics,
+    OrderUpdate,
 )
+from utils.log_util import LogUtil
 
 logger = LogUtil.get_logger('order_service')
 
@@ -30,10 +28,12 @@ class OrderService:
     """
 
     @classmethod
-    async def create_order_services(cls, query_db: AsyncSession, order_data: OrderCreate, user_id: int) -> CrudResponseModel:
+    async def create_order_services(
+        cls, query_db: AsyncSession, order_data: OrderCreate, user_id: int
+    ) -> CrudResponseModel:
         """
         创建订单服务
-        
+
         :param query_db: orm对象
         :param order_data: 订单创建数据
         :param user_id: 用户ID
@@ -76,7 +76,7 @@ class OrderService:
             # 保存订单
             await OrderDAO.create(query_db, order_entity)
             await query_db.commit()
-            
+
             return CrudResponseModel(is_success=True, message='新增成功')
 
         except Exception as e:
@@ -85,10 +85,12 @@ class OrderService:
             raise ServiceException(message=f'创建订单失败: {str(e)}')
 
     @classmethod
-    async def get_order_by_id_services(cls, query_db: AsyncSession, order_id: int, user_id: int) -> Optional[OrderResponse]:
+    async def get_order_by_id_services(
+        cls, query_db: AsyncSession, order_id: int, user_id: int
+    ) -> Optional[OrderResponse]:
         """
         根据ID获取订单服务
-        
+
         :param query_db: orm对象
         :param order_id: 订单ID
         :param user_id: 用户ID
@@ -101,7 +103,7 @@ class OrderService:
 
             # 检查权限 - 用户只能查看自己的订单或管理员可以查看所有
             # 这里暂时简化处理
-            
+
             return OrderResponse(
                 id=order.id,
                 order_id=order.order_id,
@@ -130,7 +132,7 @@ class OrderService:
     ) -> Tuple[List[OrderResponse], int]:
         """
         获取订单列表服务
-        
+
         :param query_db: orm对象
         :param page: 页码
         :param size: 每页数量
@@ -148,18 +150,20 @@ class OrderService:
 
             order_responses = []
             for order in orders:
-                order_responses.append(OrderResponse(
-                    id=order.id,
-                    order_id=order.order_id,
-                    user_id=order.user_id,
-                    name=order.name,
-                    phone=order.phone,
-                    email=order.email,
-                    total_amount=order.total_amount,
-                    status=order.status,
-                    sensitivity_score=order.sensitivity_score,
-                    created_at=order.created_at,
-                ))
+                order_responses.append(
+                    OrderResponse(
+                        id=order.id,
+                        order_id=order.order_id,
+                        user_id=order.user_id,
+                        name=order.name,
+                        phone=order.phone,
+                        email=order.email,
+                        total_amount=order.total_amount,
+                        status=order.status,
+                        sensitivity_score=order.sensitivity_score,
+                        created_at=order.created_at,
+                    )
+                )
 
             return order_responses, total
 
@@ -168,10 +172,12 @@ class OrderService:
             raise
 
     @classmethod
-    async def update_order_services(cls, query_db: AsyncSession, order_id: int, order_data: OrderUpdate, user_id: int) -> CrudResponseModel:
+    async def update_order_services(
+        cls, query_db: AsyncSession, order_id: int, order_data: OrderUpdate, user_id: int
+    ) -> CrudResponseModel:
         """
         更新订单服务
-        
+
         :param query_db: orm对象
         :param order_id: 订单ID
         :param order_data: 订单更新数据
@@ -207,7 +213,7 @@ class OrderService:
     async def delete_order_services(cls, query_db: AsyncSession, order_id: int, user_id: int) -> CrudResponseModel:
         """
         删除订单服务（软删除）
-        
+
         :param query_db: orm对象
         :param order_id: 订单ID
         :param user_id: 用户ID
@@ -228,7 +234,7 @@ class OrderService:
     async def get_order_statistics_services(cls, query_db: AsyncSession) -> OrderStatistics:
         """
         获取订单统计信息服务
-        
+
         :param query_db: orm对象
         :return: 订单统计对象
         """
@@ -247,10 +253,12 @@ class OrderService:
             raise
 
     @classmethod
-    async def search_orders_services(cls, query_db: AsyncSession, keyword: str, page: int = 1, size: int = 20) -> Tuple[List[OrderResponse], int]:
+    async def search_orders_services(
+        cls, query_db: AsyncSession, keyword: str, page: int = 1, size: int = 20
+    ) -> Tuple[List[OrderResponse], int]:
         """
         搜索订单服务
-        
+
         :param query_db: orm对象
         :param keyword: 搜索关键词
         :param page: 页码
@@ -262,18 +270,20 @@ class OrderService:
 
             order_responses = []
             for order in orders:
-                order_responses.append(OrderResponse(
-                    id=order.id,
-                    order_id=order.order_id,
-                    user_id=order.user_id,
-                    name=order.name,
-                    phone=order.phone,
-                    email=order.email,
-                    total_amount=order.total_amount,
-                    status=order.status,
-                    sensitivity_score=order.sensitivity_score,
-                    created_at=order.created_at,
-                ))
+                order_responses.append(
+                    OrderResponse(
+                        id=order.id,
+                        order_id=order.order_id,
+                        user_id=order.user_id,
+                        name=order.name,
+                        phone=order.phone,
+                        email=order.email,
+                        total_amount=order.total_amount,
+                        status=order.status,
+                        sensitivity_score=order.sensitivity_score,
+                        created_at=order.created_at,
+                    )
+                )
 
             return order_responses, total
 

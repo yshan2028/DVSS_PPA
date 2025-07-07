@@ -169,17 +169,17 @@ MONGO_CID=$(docker-compose ps -q mongo)
 REDIS_CID=$(docker-compose ps -q redis)
 
 echo "   等待 MySQL (3306) 启动..."
-timeout 60 bash -c \
+timeout 30 bash -c \
   'until docker exec '"$MYSQL_CID"' mysqladmin ping -uroot -padmin123 &>/dev/null; do sleep 2; done' \
   || echo "⚠️ MySQL 启动超时"
 
 echo "   等待 MongoDB (27017) 启动..."
-timeout 60 bash -c '
+timeout 30 bash -c '
   until docker exec "$MONGO_CID" mongo --eval "db.adminCommand(\"ping\")" &>/dev/null; do sleep 2; done
 ' || echo "⚠️ MongoDB 启动超时"
 
 echo "   等待 Redis (6379) 启动..."
-timeout 60 bash -c \
+timeout 30 bash -c \
   'until docker exec '"$REDIS_CID"' redis-cli ping &>/dev/null; do sleep 2; done' \
   || echo "⚠️ Redis 启动超时"
 echo ""

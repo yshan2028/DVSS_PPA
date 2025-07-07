@@ -4,7 +4,7 @@
 
 from typing import List, Optional, Tuple
 
-from sqlalchemy import desc, select, func
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from exceptions.custom_exception import DatabaseError
@@ -47,17 +47,17 @@ class ShardDAO:
         """分页获取用户的分片列表"""
         try:
             stmt = select(ShardInfo).where(ShardInfo.user_id == user_id)
-            
+
             # 获取总数
             count_stmt = select(func.count()).select_from(stmt.subquery())
             total_result = await self.db.execute(count_stmt)
             total = total_result.scalar()
-            
+
             # 分页查询
             stmt = stmt.order_by(desc(ShardInfo.created_at)).offset((page - 1) * size).limit(size)
             result = await self.db.execute(stmt)
             shards = result.scalars().all()
-            
+
             return list(shards), total
         except Exception as e:
             logger.error(f'获取用户分片列表失败: {e}')
@@ -67,17 +67,17 @@ class ShardDAO:
         """分页获取所有分片"""
         try:
             stmt = select(ShardInfo)
-            
+
             # 获取总数
             count_stmt = select(func.count(ShardInfo.id))
             total_result = await self.db.execute(count_stmt)
             total = total_result.scalar()
-            
+
             # 分页查询
             stmt = stmt.order_by(desc(ShardInfo.created_at)).offset((page - 1) * size).limit(size)
             result = await self.db.execute(stmt)
             shards = result.scalars().all()
-            
+
             return list(shards), total
         except Exception as e:
             logger.error(f'获取分片列表失败: {e}')
@@ -100,10 +100,10 @@ class ShardDAO:
             stmt = select(ShardInfo).where(ShardInfo.id == shard_id)
             result = await self.db.execute(stmt)
             shard = result.scalar_one_or_none()
-            
+
             if not shard:
                 return False
-                
+
             await self.db.delete(shard)
             await self.db.commit()
             return True
@@ -136,9 +136,9 @@ class ShardDAO:
             active_shards = active_result.scalar()
 
             # 存储分布统计
-            storage_stmt = select(
-                ShardInfo.storage_location, func.count(ShardInfo.id).label('count')
-            ).group_by(ShardInfo.storage_location)
+            storage_stmt = select(ShardInfo.storage_location, func.count(ShardInfo.id).label('count')).group_by(
+                ShardInfo.storage_location
+            )
             storage_result = await self.db.execute(storage_stmt)
             storage_distribution = {row[0]: row[1] for row in storage_result.fetchall()}
 

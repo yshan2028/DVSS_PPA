@@ -78,7 +78,7 @@ class DataBaseSettings(BaseSettings):
         if db_type == 'postgresql':
             return f'postgresql+psycopg2://{db_username}:{db_password}@{db_host}:{db_port}/{db_database}'
         elif db_type == 'mysql':
-            return f'mysql+pymysql://{db_username}:{db_password}@{db_host}:{db_port}/{db_database}'
+            return f'mysql+asyncmy://{db_username}:{db_password}@{db_host}:{db_port}/{db_database}'
         elif db_type == 'sqlite':
             return f'sqlite:///{db_database}.db'
         else:

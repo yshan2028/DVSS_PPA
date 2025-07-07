@@ -9,18 +9,17 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from core.deps import get_current_user, get_db
+from module_dvss.dao.log_dao import LogDAO
 from module_dvss.entity.user import User
 from module_dvss.schemas.common_schema import ApiResponse, PageResponse
-from module_dvss.dao.log_dao import LogDAO
-from utils.response_util import ResponseUtil
 from module_dvss.schemas.log_schema import (
     AuditReportRequest,
     AuditReportResponse,
     LogSearchRequest,
     LogStatsResponse,
-    OperationLogResponse,
 )
 from module_dvss.service.audit_service import AuditService
+from utils.response_util import ResponseUtil
 
 router = APIRouter(prefix='/api/v1/logs', tags=['日志管理'])
 

@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 
 import psutil
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from module_dvss.dao.log_dao import LogDAO
 from module_dvss.dao.order_dao import OrderDAO
@@ -24,12 +24,12 @@ logger = LogUtil.get_logger('monitoring_service')
 class MonitoringService:
     """系统监控服务"""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
         self.user_dao = UserDAO(db)
-        self.order_dao = OrderDAO()  # OrderDAO使用自己的session管理
+        self.order_dao = OrderDAO(db)  # OrderDAO使用统一的async session
         self.shard_dao = ShardDAO(db)
-        self.log_dao = LogDAO()  # LogDAO使用自己的session管理
+        self.log_dao = LogDAO(db)  # LogDAO使用统一的async session
 
     async def get_system_status(self) -> Dict[str, Any]:
         """

@@ -35,5 +35,5 @@ dvss_orders_total 50
 # TYPE dvss_encrypted_orders_total counter
 dvss_encrypted_orders_total 25
 """
-    
+
     return metrics_data.strip()

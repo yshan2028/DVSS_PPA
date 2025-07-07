@@ -3,9 +3,10 @@
 提供日期时间处理相关的工具方法
 """
 
-from datetime import datetime, timedelta, date
-from typing import Optional, Union, Tuple
 import calendar
+
+from datetime import date, datetime, timedelta
+from typing import Optional, Tuple
 
 
 class DateUtil:
@@ -68,7 +69,7 @@ class DateUtil:
         return int(dt.timestamp() * 1000)
 
     @staticmethod
-    def from_timestamp(timestamp: Union[int, float]) -> datetime:
+    def from_timestamp(timestamp: int | float) -> datetime:
         """从时间戳创建datetime对象"""
         # 如果是毫秒时间戳，转换为秒
         if timestamp > 10**10:
@@ -76,7 +77,7 @@ class DateUtil:
         return datetime.fromtimestamp(timestamp)
 
     @staticmethod
-    def add_days(dt: Union[datetime, date], days: int) -> Union[datetime, date]:
+    def add_days(dt: datetime | date, days: int) -> datetime | date:
         """增加天数"""
         return dt + timedelta(days=days)
 
@@ -96,7 +97,7 @@ class DateUtil:
         return dt + timedelta(seconds=seconds)
 
     @staticmethod
-    def diff_days(dt1: Union[datetime, date], dt2: Union[datetime, date]) -> int:
+    def diff_days(dt1: datetime | date, dt2: datetime | date) -> int:
         """计算日期差（天数）"""
         if isinstance(dt1, datetime):
             dt1 = dt1.date()
@@ -110,7 +111,7 @@ class DateUtil:
         return int((dt1 - dt2).total_seconds())
 
     @staticmethod
-    def is_same_day(dt1: Union[datetime, date], dt2: Union[datetime, date]) -> bool:
+    def is_same_day(dt1: datetime | date, dt2: datetime | date) -> bool:
         """判断是否为同一天"""
         if isinstance(dt1, datetime):
             dt1 = dt1.date()
@@ -119,19 +120,19 @@ class DateUtil:
         return dt1 == dt2
 
     @staticmethod
-    def is_weekend(dt: Union[datetime, date]) -> bool:
+    def is_weekend(dt: datetime | date) -> bool:
         """判断是否为周末"""
         if isinstance(dt, datetime):
             dt = dt.date()
         return dt.weekday() >= 5  # 5=Saturday, 6=Sunday
 
     @staticmethod
-    def is_workday(dt: Union[datetime, date]) -> bool:
+    def is_workday(dt: datetime | date) -> bool:
         """判断是否为工作日"""
         return not DateUtil.is_weekend(dt)
 
     @staticmethod
-    def get_week_start(dt: Union[datetime, date]) -> date:
+    def get_week_start(dt: datetime | date) -> date:
         """获取本周开始日期（周一）"""
         if isinstance(dt, datetime):
             dt = dt.date()
@@ -139,20 +140,20 @@ class DateUtil:
         return dt - timedelta(days=days_since_monday)
 
     @staticmethod
-    def get_week_end(dt: Union[datetime, date]) -> date:
+    def get_week_end(dt: datetime | date) -> date:
         """获取本周结束日期（周日）"""
         week_start = DateUtil.get_week_start(dt)
         return week_start + timedelta(days=6)
 
     @staticmethod
-    def get_month_start(dt: Union[datetime, date]) -> date:
+    def get_month_start(dt: datetime | date) -> date:
         """获取本月开始日期"""
         if isinstance(dt, datetime):
             dt = dt.date()
         return dt.replace(day=1)
 
     @staticmethod
-    def get_month_end(dt: Union[datetime, date]) -> date:
+    def get_month_end(dt: datetime | date) -> date:
         """获取本月结束日期"""
         if isinstance(dt, datetime):
             dt = dt.date()
@@ -164,30 +165,30 @@ class DateUtil:
         return next_month - timedelta(days=1)
 
     @staticmethod
-    def get_year_start(dt: Union[datetime, date]) -> date:
+    def get_year_start(dt: datetime | date) -> date:
         """获取本年开始日期"""
         if isinstance(dt, datetime):
             dt = dt.date()
         return dt.replace(month=1, day=1)
 
     @staticmethod
-    def get_year_end(dt: Union[datetime, date]) -> date:
+    def get_year_end(dt: datetime | date) -> date:
         """获取本年结束日期"""
         if isinstance(dt, datetime):
             dt = dt.date()
         return dt.replace(month=12, day=31)
 
     @staticmethod
-    def get_quarter_start(dt: Union[datetime, date]) -> date:
+    def get_quarter_start(dt: datetime | date) -> date:
         """获取季度开始日期"""
         if isinstance(dt, datetime):
             dt = dt.date()
-        
+
         quarter_month = ((dt.month - 1) // 3) * 3 + 1
         return dt.replace(month=quarter_month, day=1)
 
     @staticmethod
-    def get_quarter_end(dt: Union[datetime, date]) -> date:
+    def get_quarter_end(dt: datetime | date) -> date:
         """获取季度结束日期"""
         quarter_start = DateUtil.get_quarter_start(dt)
         # 加3个月，然后减去一天
@@ -207,13 +208,13 @@ class DateUtil:
         """计算年龄"""
         if reference_date is None:
             reference_date = DateUtil.today()
-        
+
         age = reference_date.year - birth_date.year
-        
+
         # 检查是否已过生日
         if (reference_date.month, reference_date.day) < (birth_date.month, birth_date.day):
             age -= 1
-        
+
         return age
 
     @staticmethod
@@ -221,20 +222,20 @@ class DateUtil:
         """格式化相对时间"""
         if reference_dt is None:
             reference_dt = DateUtil.now()
-        
+
         diff = reference_dt - dt
         seconds = int(diff.total_seconds())
-        
+
         if seconds < 0:
-            return "未来时间"
+            return '未来时间'
         elif seconds < 60:
-            return f"{seconds}秒前"
+            return f'{seconds}秒前'
         elif seconds < 3600:
-            return f"{seconds // 60}分钟前"
+            return f'{seconds // 60}分钟前'
         elif seconds < 86400:
-            return f"{seconds // 3600}小时前"
+            return f'{seconds // 3600}小时前'
         elif seconds < 604800:  # 7天
-            return f"{seconds // 86400}天前"
+            return f'{seconds // 86400}天前'
         else:
             return DateUtil.format_datetime(dt, DateUtil.DATE_FORMAT)
 
@@ -243,7 +244,7 @@ class DateUtil:
         """获取日期范围"""
         if reference_date is None:
             reference_date = DateUtil.today()
-        
+
         if range_type == 'today':
             return reference_date, reference_date
         elif range_type == 'yesterday':
@@ -277,11 +278,10 @@ class DateUtil:
             start_date = reference_date - timedelta(days=89)
             return start_date, reference_date
         else:
-            raise ValueError(f"不支持的日期范围类型: {range_type}")
+            raise ValueError(f'不支持的日期范围类型: {range_type}')
 
     @staticmethod
-    def is_valid_date_range(start_date: Union[datetime, date], 
-                          end_date: Union[datetime, date]) -> bool:
+    def is_valid_date_range(start_date: datetime | date, end_date: datetime | date) -> bool:
         """验证日期范围是否有效"""
         return start_date <= end_date
 
@@ -290,15 +290,15 @@ class DateUtil:
         """计算工作日天数（排除周末）"""
         if start_date > end_date:
             return 0
-        
+
         business_days = 0
         current_date = start_date
-        
+
         while current_date <= end_date:
             if DateUtil.is_workday(current_date):
                 business_days += 1
             current_date += timedelta(days=1)
-        
+
         return business_days
 
     @staticmethod
@@ -314,6 +314,7 @@ class DateUtil:
         """获取带时区的当前时间"""
         try:
             from zoneinfo import ZoneInfo
+
             return datetime.now(ZoneInfo(timezone_name))
         except ImportError:
             # 如果zoneinfo不可用，返回本地时间
@@ -324,11 +325,11 @@ class DateUtil:
         """转换时区"""
         try:
             from zoneinfo import ZoneInfo
-            
+
             if dt.tzinfo is None:
                 # 如果没有时区信息，假设是from_tz时区
                 dt = dt.replace(tzinfo=ZoneInfo(from_tz))
-            
+
             return dt.astimezone(ZoneInfo(to_tz))
         except ImportError:
             # 如果zoneinfo不可用，返回原时间

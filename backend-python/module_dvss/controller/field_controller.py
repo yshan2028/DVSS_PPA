@@ -13,7 +13,6 @@ from module_dvss.schemas.common_schema import ApiResponse, PageResponse
 from module_dvss.schemas.field_schema import (
     FieldBatchUpdate,
     FieldCreate,
-    FieldList,
     FieldPermission,
     FieldResponse,
     FieldSensitivityAnalysis,

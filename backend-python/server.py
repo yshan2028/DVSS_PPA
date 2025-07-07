@@ -9,7 +9,7 @@ import uvicorn
 from fastapi import FastAPI
 
 # 本地模块导入
-from config.database import engine
+from config.database import init_create_table
 from exceptions.handle import register_exception_handlers
 from middlewares.handle import handle_middleware
 from module_dvss.controller.auth_controller import router as auth_router
@@ -28,6 +28,23 @@ from utils.log_util import LogUtil
 logger = LogUtil.get_logger(__name__)
 
 
+async def init_database():
+    """异步初始化数据库"""
+    try:
+        # 异步创建数据库表
+        await init_create_table()
+        logger.info('✅ 数据库表已就绪')
+        
+        # 异步初始化数据（创建默认角色和用户）
+        from scripts.init_db import init_database as init_data
+        await init_data()
+        logger.info('✅ 数据库数据初始化完成')
+        
+    except Exception as exc:
+        logger.exception('❌ 数据库初始化失败', exc_info=exc)
+        raise
+
+
 # 生命周期事件
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -35,12 +52,8 @@ async def lifespan(app: FastAPI):
     # 启动阶段
     logger.info('🚀 启动 DVSS-PPA 应用...')
 
-    try:
-        # 创建数据库表
-        Base.metadata.create_all(bind=engine)
-        logger.info('✅ 数据库表已就绪')
-    except Exception as exc:
-        logger.exception('❌ 数据库初始化失败', exc_info=exc)
+    # 异步初始化数据库
+    await init_database()
 
     logger.info('✅ DVSS-PPA启动成功')
     yield

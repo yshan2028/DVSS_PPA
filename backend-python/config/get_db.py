@@ -3,7 +3,7 @@
 Database Dependency Injection
 """
 
-from config.database import AsyncSessionLocal, Base, engine
+from config.database import AsyncSessionLocal, Base, async_engine
 from utils.log_util import LogUtil
 
 logger = LogUtil.get_logger('get_db')
@@ -18,10 +18,13 @@ async def get_db():
         yield session
 
 
-def init_create_table():
+async def init_create_table():
     """
-    应用启动时初始化数据库连接
+    应用启动时异步初始化数据库连接和创建表
     """
-    logger.info('初始化数据库连接...')
-    Base.metadata.create_all(bind=engine)
-    logger.info('数据库连接成功')
+    logger.info('异步初始化数据库连接...')
+    
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
+    logger.info('数据库表创建完成')

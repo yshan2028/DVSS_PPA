@@ -5,7 +5,7 @@
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import and_, asc, desc, func, or_, select
+from sqlalchemy import and_, asc, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from module_dvss.entity.operation_log import OperationLog
@@ -157,7 +157,9 @@ class LogDAO:
         """获取用户操作日志"""
         return await self.get_operation_logs_list(page=page, size=size, filters={'user_id': user_id})
 
-    async def get_logs_by_type(self, operation_type: str, page: int = 1, size: int = 20) -> Tuple[List[OperationLog], int]:
+    async def get_logs_by_type(
+        self, operation_type: str, page: int = 1, size: int = 20
+    ) -> Tuple[List[OperationLog], int]:
         """根据操作类型获取日志"""
         return await self.get_operation_logs_list(page=page, size=size, filters={'operation_type': operation_type})
 
@@ -184,9 +186,7 @@ class LogDAO:
             start_date = end_date - timedelta(days=days)
 
             # 总操作数
-            total_stmt = select(func.count(OperationLog.id)).where(
-                OperationLog.created_at >= start_date
-            )
+            total_stmt = select(func.count(OperationLog.id)).where(OperationLog.created_at >= start_date)
             total_result = await self.db.execute(total_stmt)
             total_operations = total_result.scalar()
 
@@ -201,16 +201,20 @@ class LogDAO:
             failure_operations = total_operations - success_operations
 
             # 操作类型分布
-            type_stmt = select(
-                OperationLog.operation_type, func.count(OperationLog.id).label('count')
-            ).where(OperationLog.created_at >= start_date).group_by(OperationLog.operation_type)
+            type_stmt = (
+                select(OperationLog.operation_type, func.count(OperationLog.id).label('count'))
+                .where(OperationLog.created_at >= start_date)
+                .group_by(OperationLog.operation_type)
+            )
             type_result = await self.db.execute(type_stmt)
             operation_types = {row[0]: row[1] for row in type_result.fetchall()}
 
             # 资源类型分布
-            resource_stmt = select(
-                OperationLog.resource_type, func.count(OperationLog.id).label('count')
-            ).where(OperationLog.created_at >= start_date).group_by(OperationLog.resource_type)
+            resource_stmt = (
+                select(OperationLog.resource_type, func.count(OperationLog.id).label('count'))
+                .where(OperationLog.created_at >= start_date)
+                .group_by(OperationLog.resource_type)
+            )
             resource_result = await self.db.execute(resource_stmt)
             resource_types = {row[0]: row[1] for row in resource_result.fetchall()}
 
@@ -235,11 +239,11 @@ class LogDAO:
             stmt = select(OperationLog).where(OperationLog.created_at < cutoff_date)
             result = await self.db.execute(stmt)
             logs_to_delete = result.scalars().all()
-            
+
             count = len(logs_to_delete)
             for log in logs_to_delete:
                 await self.db.delete(log)
-            
+
             await self.db.commit()
             return count
 
@@ -262,12 +266,12 @@ class LogDAO:
         """创建系统日志"""
         # 这里可以实现系统日志的创建逻辑
         # 暂时返回模拟对象
-        logger.info(f"Creating system log: {log_data}")
-        return {"id": 1, "message": "System log created"}
+        logger.info(f'Creating system log: {log_data}')
+        return {'id': 1, 'message': 'System log created'}
 
     async def create_security_log(self, log_data: SecurityLogCreate) -> Any:
         """创建安全日志"""
         # 这里可以实现安全日志的创建逻辑
         # 暂时返回模拟对象
-        logger.info(f"Creating security log: {log_data}")
-        return {"id": 1, "message": "Security log created"}
+        logger.info(f'Creating security log: {log_data}')
+        return {'id': 1, 'message': 'Security log created'}

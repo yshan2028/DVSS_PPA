@@ -15,7 +15,7 @@ class Role(Base):
     __tablename__ = 'roles'
 
     id = Column(Integer, primary_key=True, index=True, comment='主键ID')
-    name = Column(String(100), unique=True, nullable=False, index=True, comment='角色名称')
+    name = Column(String(50), unique=True, nullable=False, index=True, comment='角色名称')
     description = Column(Text, nullable=True, comment='角色描述')
     is_active = Column(Boolean, default=True, nullable=False, index=True, comment='是否激活')
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment='创建时间')

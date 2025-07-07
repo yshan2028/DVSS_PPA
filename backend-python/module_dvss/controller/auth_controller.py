@@ -27,6 +27,7 @@ async def logout(current_user: User = Depends(get_current_user)):
     """用户登出"""
     # 在实际项目中，可以将token加入黑名单
     from utils.response_util import ResponseUtil
+
     return ResponseUtil.success(message='登出成功')
 
 
@@ -56,4 +57,5 @@ async def change_password(
     """修改密码"""
     # 这里可以添加修改密码的逻辑
     from utils.response_util import ResponseUtil
+
     return ResponseUtil.success(message='密码修改成功')

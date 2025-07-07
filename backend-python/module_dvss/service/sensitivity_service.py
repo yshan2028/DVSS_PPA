@@ -8,7 +8,6 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from exceptions.custom_exception import DVSSException
-
 from module_dvss.dao.field_dao import FieldDAO
 
 

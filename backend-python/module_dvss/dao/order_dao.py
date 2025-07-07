@@ -8,10 +8,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy import and_, asc, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from utils.log_util import LogUtil
-
 from module_dvss.entity.encrypted_order import EncryptedOrder
 from module_dvss.entity.original_order import OriginalOrder
+from utils.log_util import LogUtil
 
 logger = LogUtil.get_logger('order_dao')
 
@@ -25,7 +24,7 @@ class OrderDAO:
     async def create(cls, db: AsyncSession, order: OriginalOrder) -> OriginalOrder:
         """
         创建订单
-        
+
         :param db: orm对象
         :param order: 订单对象
         :return: 创建的订单对象
@@ -43,7 +42,7 @@ class OrderDAO:
     async def get_by_id(cls, db: AsyncSession, order_id: int) -> Optional[OriginalOrder]:
         """
         根据ID获取订单
-        
+
         :param db: orm对象
         :param order_id: 订单ID
         :return: 订单对象
@@ -60,7 +59,7 @@ class OrderDAO:
     async def get_by_order_id(cls, db: AsyncSession, order_id: str) -> Optional[OriginalOrder]:
         """
         根据订单号获取订单
-        
+
         :param db: orm对象
         :param order_id: 订单号
         :return: 订单对象
@@ -87,7 +86,7 @@ class OrderDAO:
     ) -> Tuple[List[OriginalOrder], int]:
         """
         获取订单列表
-        
+
         :param db: orm对象
         :param page: 页码
         :param size: 每页数量
@@ -163,7 +162,7 @@ class OrderDAO:
     async def update(cls, db: AsyncSession, order: OriginalOrder) -> OriginalOrder:
         """
         更新订单
-        
+
         :param db: orm对象
         :param order: 订单对象
         :return: 更新后的订单对象
@@ -181,7 +180,7 @@ class OrderDAO:
     async def delete(cls, db: AsyncSession, order_id: int) -> bool:
         """
         删除订单（物理删除）
-        
+
         :param db: orm对象
         :param order_id: 订单ID
         :return: 删除结果
@@ -204,7 +203,7 @@ class OrderDAO:
     async def soft_delete(cls, db: AsyncSession, order_id: int) -> bool:
         """
         软删除订单
-        
+
         :param db: orm对象
         :param order_id: 订单ID
         :return: 删除结果
@@ -225,10 +224,12 @@ class OrderDAO:
             raise
 
     @classmethod
-    async def get_orders_by_user(cls, db: AsyncSession, user_id: str, page: int = 1, size: int = 10) -> Tuple[List[OriginalOrder], int]:
+    async def get_orders_by_user(
+        cls, db: AsyncSession, user_id: str, page: int = 1, size: int = 10
+    ) -> Tuple[List[OriginalOrder], int]:
         """
         获取用户的订单列表
-        
+
         :param db: orm对象
         :param user_id: 用户ID
         :param page: 页码
@@ -238,10 +239,12 @@ class OrderDAO:
         return await cls.get_list(db, page=page, size=size, filters={'user_id': user_id})
 
     @classmethod
-    async def get_orders_by_status(cls, db: AsyncSession, status: str, page: int = 1, size: int = 10) -> Tuple[List[OriginalOrder], int]:
+    async def get_orders_by_status(
+        cls, db: AsyncSession, status: str, page: int = 1, size: int = 10
+    ) -> Tuple[List[OriginalOrder], int]:
         """
         根据状态获取订单列表
-        
+
         :param db: orm对象
         :param status: 订单状态
         :param page: 页码
@@ -256,7 +259,7 @@ class OrderDAO:
     ) -> Tuple[List[OriginalOrder], int]:
         """
         获取高敏感度订单
-        
+
         :param db: orm对象
         :param threshold: 敏感度阈值
         :param page: 页码
@@ -290,7 +293,7 @@ class OrderDAO:
     async def get_statistics(cls, db: AsyncSession) -> Dict[str, Any]:
         """
         获取订单统计信息
-        
+
         :param db: orm对象
         :return: 统计信息字典
         """
@@ -360,10 +363,12 @@ class OrderDAO:
             raise
 
     @classmethod
-    async def search_orders(cls, db: AsyncSession, keyword: str, page: int = 1, size: int = 10) -> Tuple[List[OriginalOrder], int]:
+    async def search_orders(
+        cls, db: AsyncSession, keyword: str, page: int = 1, size: int = 10
+    ) -> Tuple[List[OriginalOrder], int]:
         """
         搜索订单
-        
+
         :param db: orm对象
         :param keyword: 搜索关键词
         :param page: 页码
@@ -378,7 +383,7 @@ class OrderDAO:
     ) -> Tuple[List[OriginalOrder], int]:
         """
         根据日期范围获取订单
-        
+
         :param db: orm对象
         :param start_date: 开始日期
         :param end_date: 结束日期
@@ -392,7 +397,7 @@ class OrderDAO:
     async def get_total_count(cls, db: AsyncSession) -> int:
         """
         获取订单总数
-        
+
         :param db: orm对象
         :return: 订单总数
         """
@@ -409,7 +414,7 @@ class OrderDAO:
     async def create_encrypted_order(cls, db: AsyncSession, encrypted_order: EncryptedOrder) -> EncryptedOrder:
         """
         创建加密订单
-        
+
         :param db: orm对象
         :param encrypted_order: 加密订单对象
         :return: 创建的加密订单对象
@@ -427,7 +432,7 @@ class OrderDAO:
     async def get_encrypted_order_by_id(cls, db: AsyncSession, encrypted_order_id: int) -> Optional[EncryptedOrder]:
         """
         根据ID获取加密订单
-        
+
         :param db: orm对象
         :param encrypted_order_id: 加密订单ID
         :return: 加密订单对象
@@ -441,10 +446,12 @@ class OrderDAO:
             raise
 
     @classmethod
-    async def get_encrypted_order_by_original_id(cls, db: AsyncSession, original_order_id: int) -> Optional[EncryptedOrder]:
+    async def get_encrypted_order_by_original_id(
+        cls, db: AsyncSession, original_order_id: int
+    ) -> Optional[EncryptedOrder]:
         """
         根据原始订单ID获取加密订单
-        
+
         :param db: orm对象
         :param original_order_id: 原始订单ID
         :return: 加密订单对象

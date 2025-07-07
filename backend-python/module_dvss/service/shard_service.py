@@ -3,13 +3,12 @@
 """
 
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from exceptions.custom_exception import AuthorizationError, NotFoundError, ValidationError
 from module_dvss.dao.shard_dao import ShardDAO
-from module_dvss.entity.shard_info import ShardInfo
 from module_dvss.schemas.shard_schema import (
     ShardInfoCreate,
     ShardInfoResponse,
@@ -115,17 +114,19 @@ class ShardService:
 
             shard_list = []
             for shard in shards:
-                shard_list.append(ShardInfoResponse(
-                    id=shard.id,
-                    user_id=shard.user_id,
-                    shard_index=shard.shard_index,
-                    storage_location=shard.storage_location,
-                    threshold=shard.threshold,
-                    total_shards=shard.total_shards,
-                    algorithm=shard.algorithm,
-                    status=shard.status,
-                    created_at=shard.created_at,
-                ))
+                shard_list.append(
+                    ShardInfoResponse(
+                        id=shard.id,
+                        user_id=shard.user_id,
+                        shard_index=shard.shard_index,
+                        storage_location=shard.storage_location,
+                        threshold=shard.threshold,
+                        total_shards=shard.total_shards,
+                        algorithm=shard.algorithm,
+                        status=shard.status,
+                        created_at=shard.created_at,
+                    )
+                )
 
             return ShardListResponse(
                 shards=shard_list,
@@ -139,9 +140,7 @@ class ShardService:
             logger.error(f'Error getting shards list: {str(e)}')
             raise
 
-    async def update_shard(
-        self, shard_id: int, request: ShardInfoUpdate, current_user_id: int
-    ) -> ShardInfoResponse:
+    async def update_shard(self, shard_id: int, request: ShardInfoUpdate, current_user_id: int) -> ShardInfoResponse:
         """更新分片"""
         try:
             shard = await self.shard_dao.get_shard_by_id(shard_id)
@@ -220,17 +219,19 @@ class ShardService:
                 if shard.user_id != current_user_id:
                     continue
 
-                shard_list.append(ShardInfoResponse(
-                    id=shard.id,
-                    user_id=shard.user_id,
-                    shard_index=shard.shard_index,
-                    storage_location=shard.storage_location,
-                    threshold=shard.threshold,
-                    total_shards=shard.total_shards,
-                    algorithm=shard.algorithm,
-                    status=shard.status,
-                    created_at=shard.created_at,
-                ))
+                shard_list.append(
+                    ShardInfoResponse(
+                        id=shard.id,
+                        user_id=shard.user_id,
+                        shard_index=shard.shard_index,
+                        storage_location=shard.storage_location,
+                        threshold=shard.threshold,
+                        total_shards=shard.total_shards,
+                        algorithm=shard.algorithm,
+                        status=shard.status,
+                        created_at=shard.created_at,
+                    )
+                )
 
             return shard_list
 
