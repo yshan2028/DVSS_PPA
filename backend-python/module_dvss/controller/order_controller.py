@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config.get_db import get_db
 from core.deps import get_current_user
 from module_dvss.entity.user import User
-from module_dvss.schemas.common_schema import ApiResponse
+from module_dvss.schemas.common_schema import ApiResponse, PageInfo, PageResponse
 from module_dvss.schemas.order_schema import (
     EncryptedOrderResponse,
     OrderCreate,
@@ -20,7 +20,7 @@ from module_dvss.schemas.order_schema import (
     OrderUpdate,
 )
 from module_dvss.service.order_service import OrderService
-from utils.response_util import PageResponse, ResponseUtil
+from utils.response_util import ResponseUtil
 
 router = APIRouter(prefix='/api/v1/orders', tags=['订单管理'])
 
@@ -55,7 +55,8 @@ async def get_orders(
             filters['user_id'] = user_id
 
         orders, total = await OrderService.get_order_list_services(db, page, size, current_user.id, filters)
-        result = PageResponse(items=orders, total=total, page=page, size=size)
+        page_info = PageInfo(total=total, page=page, size=size, pages=(total + size - 1) // size)
+        result = PageResponse(items=orders, page_info=page_info)
         return ResponseUtil.success(data=result, message='获取订单列表成功')
     except Exception as e:
         return ResponseUtil.error(message=f'获取订单列表失败: {str(e)}')

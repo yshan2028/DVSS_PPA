@@ -139,6 +139,8 @@ class LogSearchRequest(BaseModel):
     end_date: Optional[datetime] = Field(None, description='结束日期')
     is_success: Optional[bool] = Field(None, description='是否成功')
     has_error: Optional[bool] = Field(None, description='是否有错误')
+    page: Optional[int] = Field(1, ge=1, description='页码')
+    size: Optional[int] = Field(20, ge=1, le=100, description='每页大小')
 
 
 class LogStatsRequest(BaseModel):

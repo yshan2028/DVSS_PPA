@@ -65,7 +65,7 @@ async def get_fields_list(
         )
 
         return ResponseUtil.paginated_success(
-            data=fields, total=total, page=page, size=size, message='获取字段列表成功'
+            items=fields, total=total, page=page, size=size, message='获取字段列表成功'
         )
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='获取字段列表失败')

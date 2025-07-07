@@ -31,13 +31,10 @@ class UserService:
             # 创建用户实体
             user = User(
                 username=user_data.username,
-                email=user_data.email,
                 password_hash=get_password_hash(user_data.password),
                 full_name=user_data.full_name,
-                phone=user_data.phone,
                 role_id=user_data.role_id,
                 is_active=user_data.is_active if user_data.is_active is not None else True,
-                is_superuser=user_data.is_superuser if user_data.is_superuser is not None else False,
             )
 
             return await self.user_dao.create(user)
@@ -79,7 +76,7 @@ class UserService:
                 raise ValueError('用户不存在')
 
             # 更新字段
-            update_data = user_data.dict(exclude_unset=True)
+            update_data = user_data.model_dump(exclude_unset=True)
             for field, value in update_data.items():
                 if hasattr(user, field):
                     setattr(user, field, value)

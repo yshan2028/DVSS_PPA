@@ -30,20 +30,20 @@ class NodeStatus(str, Enum):
 class ShardInfoBase(BaseModel):
     """分片信息基础模型"""
 
-    order_id: int = Field(..., description='订单ID')
     shard_index: int = Field(..., ge=0, description='分片索引')
     shard_data: str = Field(..., description='分片数据')
-    node_id: str = Field(..., description='存储节点ID')
-    storage_path: str = Field(..., description='存储路径')
-    checksum: str = Field(..., description='校验和')
-    k_value: int = Field(..., ge=2, description='分片阈值')
-    n_value: int = Field(..., ge=3, description='分片总数')
+    storage_location: Optional[str] = Field(None, description='存储位置')
+    threshold: Optional[int] = Field(None, ge=2, description='分片阈值')
+    total_shards: Optional[int] = Field(None, ge=3, description='分片总数')
+    algorithm: Optional[str] = Field(None, description='分片算法')
+    metadata: Optional[Dict[str, Any]] = Field(None, description='额外元数据')
 
 
 class ShardInfoCreate(ShardInfoBase):
     """创建分片信息请求"""
 
-    pass
+    original_order_id: Optional[int] = Field(None, description='原始订单ID')
+    encrypted_order_id: Optional[int] = Field(None, description='加密订单ID')
 
 
 class ShardInfoUpdate(BaseModel):
@@ -55,16 +55,19 @@ class ShardInfoUpdate(BaseModel):
     checksum: Optional[str] = Field(None, description='校验和')
 
 
-class ShardInfoResponse(ShardInfoBase):
+class ShardInfoResponse(BaseModel):
     """分片信息响应"""
 
     id: int = Field(..., description='分片ID')
-    status: ShardStatus = Field(..., description='分片状态')
-    size_bytes: int = Field(..., description='分片大小（字节）')
+    user_id: Optional[int] = Field(None, description='用户ID')
+    shard_index: int = Field(..., description='分片索引')
+    storage_location: Optional[str] = Field(None, description='存储位置')
+    threshold: Optional[int] = Field(None, description='分片阈值')
+    total_shards: Optional[int] = Field(None, description='分片总数')
+    algorithm: Optional[str] = Field(None, description='分片算法')
+    status: str = Field(..., description='分片状态')
     created_at: datetime = Field(..., description='创建时间')
     updated_at: datetime = Field(..., description='更新时间')
-    last_verified: Optional[datetime] = Field(None, description='最后验证时间')
-    verification_status: Optional[str] = Field(None, description='验证状态')
 
     class Config:
         from_attributes = True
@@ -74,6 +77,8 @@ class ShardListResponse(BaseModel):
     """分片列表响应"""
 
     total: int = Field(..., description='总数')
+    page: int = Field(..., description='当前页码')
+    size: int = Field(..., description='每页大小')
     items: List[ShardInfoResponse] = Field(..., description='分片列表')
 
 
@@ -101,11 +106,8 @@ class ShardStatsResponse(BaseModel):
 
     total_shards: int = Field(..., description='总分片数')
     active_shards: int = Field(..., description='活跃分片数')
-    corrupted_shards: int = Field(..., description='损坏分片数')
-    total_orders_sharded: int = Field(..., description='已分片订单总数')
-    storage_usage_bytes: int = Field(..., description='存储使用量（字节）')
-    node_distribution: Dict[str, int] = Field(..., description='节点分布')
-    status_distribution: Dict[str, int] = Field(..., description='状态分布')
+    storage_distribution: Dict[str, int] = Field(..., description='存储分布')
+    user_id: Optional[int] = Field(None, description='用户ID（可选）')
 
 
 class NodeInfoBase(BaseModel):

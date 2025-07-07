@@ -27,9 +27,9 @@ class MonitoringService:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.user_dao = UserDAO(db)
-        self.order_dao = OrderDAO(db)  # OrderDAO使用统一的async session
+        self.order_dao = OrderDAO(db)
         self.shard_dao = ShardDAO(db)
-        self.log_dao = LogDAO(db)  # LogDAO使用统一的async session
+        self.log_dao = LogDAO(db)
 
     async def get_system_status(self) -> Dict[str, Any]:
         """
@@ -51,7 +51,7 @@ class MonitoringService:
 
             # 今日活动统计
             today = datetime.now().date()
-            today_logs = await self.log_dao.get_logs_by_date(today)
+            today_logs, _ = await self.log_dao.get_logs_by_date(today)
 
             return {
                 'system': {
@@ -87,12 +87,12 @@ class MonitoringService:
             start_time = end_time - timedelta(hours=hours)
 
             # 获取时间范围内的操作日志
-            logs = await self.log_dao.get_logs_by_time_range(start_time, end_time)
+            logs, _ = await self.log_dao.get_logs_by_time_range(start_time, end_time)
 
             # 统计各种操作的数量
             operation_stats = {}
             for log in logs:
-                operation = log.operation
+                operation = log.operation_type
                 if operation not in operation_stats:
                     operation_stats[operation] = 0
                 operation_stats[operation] += 1
@@ -169,10 +169,10 @@ class MonitoringService:
             end_time = datetime.now()
             start_time = end_time - timedelta(hours=1)
 
-            logs = await self.log_dao.get_logs_by_time_range(start_time, end_time)
+            logs, _ = await self.log_dao.get_logs_by_time_range(start_time, end_time)
 
             # 筛选失败登录
-            failed_logins = [log for log in logs if 'login' in log.operation and not log.is_success]
+            failed_logins = [log for log in logs if 'login' in log.operation_type.lower() and log.status == 'failure']
 
             return len(failed_logins)
 

@@ -69,17 +69,27 @@ class AuditService:
 
             log_entity = OperationLog(
                 user_id=log_data.user_id,
-                username=log_data.username,
                 operation_type=log_data.operation_type,
                 resource_type=log_data.resource_type,
                 resource_id=log_data.resource_id,
-                operation_details=log_data.operation_details,
+                operation_detail=json.dumps({
+                    'username': log_data.username,
+                    'operation_details': log_data.operation_details,
+                    'request_data': log_data.request_data,
+                    'response_data': log_data.response_data,
+                    'duration_ms': log_data.duration_ms,
+                })
+                if any([
+                    log_data.username,
+                    log_data.operation_details,
+                    log_data.request_data,
+                    log_data.response_data,
+                    log_data.duration_ms,
+                ])
+                else None,
                 ip_address=log_data.ip_address,
                 user_agent=log_data.user_agent,
-                request_data=json.dumps(log_data.request_data) if log_data.request_data else None,
-                response_data=json.dumps(log_data.response_data) if log_data.response_data else None,
-                duration_ms=log_data.duration_ms,
-                is_success=log_data.is_success,
+                status='success' if log_data.is_success else 'failure',
                 error_message=log_data.error_message,
             )
 
@@ -88,7 +98,7 @@ class AuditService:
             # 检查是否需要触发安全告警
             await self._check_security_alerts(log_data)
 
-            return OperationLogResponse.from_orm(saved_log)
+            return OperationLogResponse.model_validate(saved_log)
 
         except Exception as e:
             # 审计日志记录失败不应该影响主要业务流程
@@ -122,7 +132,7 @@ class AuditService:
             )
 
             saved_log = await self.log_dao.create_system_log(log_data)
-            return SystemLogResponse.from_orm(saved_log)
+            return SystemLogResponse.model_validate(saved_log)
 
         except Exception as e:
             print(f'记录系统日志失败: {str(e)}')
@@ -164,7 +174,7 @@ class AuditService:
             if risk_score >= 0.8 or severity in ['critical', 'high']:
                 await self._handle_high_risk_event(log_data)
 
-            return SecurityLogResponse.from_orm(saved_log)
+            return SecurityLogResponse.model_validate(saved_log)
 
         except Exception as e:
             print(f'记录安全日志失败: {str(e)}')
@@ -297,12 +307,24 @@ class AuditService:
 
             timeline = []
             for activity in activities:
+                # 解析operation_detail中的JSON数据
+                detail_data = {}
+                if activity.operation_detail:
+                    try:
+                        detail_data = json.loads(activity.operation_detail)
+                    except:
+                        pass
+
                 timeline.append({
                     'timestamp': activity.created_at,
                     'operation': activity.operation_type,
-                    'resource': f'{activity.resource_type}:{activity.resource_id}',
-                    'details': activity.operation_details,
-                    'success': activity.is_success,
+                    'resource': f'{activity.resource_type}:{activity.resource_id}'
+                    if activity.resource_id
+                    else activity.resource_type,
+                    'details': detail_data.get(
+                        'operation_details', f'{activity.operation_type} {activity.resource_type}'
+                    ),
+                    'success': activity.status == 'success',
                     'ip_address': activity.ip_address,
                 })
 
@@ -416,7 +438,7 @@ class AuditService:
     async def _detect_privilege_escalation(self, activities: List[Any]) -> bool:
         """检测权限提升尝试"""
         for activity in activities:
-            if not activity.is_success and 'ADMIN' in activity.operation_type:
+            if activity.status == 'failure' and 'ADMIN' in activity.operation_type:
                 return True
         return False
 
@@ -462,4 +484,66 @@ class AuditService:
             ip_address=log_data.ip_address,
             event_details={'resource_type': log_data.resource_type, 'resource_id': log_data.resource_id},
             risk_score=0.7,
+        )
+
+    async def log_order_upload(
+        self, user_id: int, file_name: str, order_count: int, ip_address: str = None, **kwargs
+    ) -> None:
+        """记录订单上传日志"""
+        await self.log_operation(
+            user_id=user_id,
+            operation='ORDER_UPLOAD',
+            resource_type='orders',
+            details=f'上传订单文件: {file_name}, 订单数量: {order_count}',
+            ip_address=ip_address,
+            **kwargs,
+        )
+
+    async def log_order_query(
+        self, user_id: int, query_params: dict, result_count: int = 0, ip_address: str = None, **kwargs
+    ) -> None:
+        """记录订单查询日志"""
+        await self.log_operation(
+            user_id=user_id,
+            operation='ORDER_QUERY',
+            resource_type='orders',
+            details=f'查询订单，查询条件: {json.dumps(query_params)}, 结果数量: {result_count}',
+            ip_address=ip_address,
+            request_data=query_params,
+            **kwargs,
+        )
+
+    async def log_order_deletion(self, user_id: int, order_ids: list, ip_address: str = None, **kwargs) -> None:
+        """记录订单删除日志"""
+        await self.log_operation(
+            user_id=user_id,
+            operation='ORDER_DELETE',
+            resource_type='orders',
+            details=f'删除订单，订单ID: {order_ids}',
+            ip_address=ip_address,
+            request_data={'order_ids': order_ids},
+            **kwargs,
+        )
+
+    async def log_error(
+        self,
+        user_id: int,
+        operation: str,
+        error_message: str,
+        resource_type: str = None,
+        resource_id: str = None,
+        ip_address: str = None,
+        **kwargs,
+    ) -> None:
+        """记录错误日志"""
+        await self.log_operation(
+            user_id=user_id,
+            operation=operation,
+            resource_type=resource_type or 'system',
+            resource_id=resource_id,
+            details=f'操作失败: {error_message}',
+            ip_address=ip_address,
+            is_success=False,
+            error_message=error_message,
+            **kwargs,
         )

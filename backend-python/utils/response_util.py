@@ -58,6 +58,13 @@ class ResponseUtil:
             'timestamp': None,  # 将在中间件中设置
         }
 
+    @staticmethod
+    def paginated_success(items: list, total: int, page: int, size: int, message: str = '查询成功') -> Dict[str, Any]:
+        """
+        分页成功响应（兼容方法）
+        """
+        return ResponseUtil.page_success(items, total, page, size, message)
+
 
 class ApiResponse(BaseModel, Generic[T]):
     """API响应模型"""

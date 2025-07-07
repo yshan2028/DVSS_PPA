@@ -2,7 +2,7 @@
 订单服务层
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,28 +47,30 @@ class OrderService:
             order_entity = OriginalOrder(
                 order_id=order_data.order_id,
                 user_id=order_data.user_id,
-                name=order_data.name,
-                phone=order_data.phone,
-                email=order_data.email,
-                address=order_data.address,
-                shipping_address=order_data.shipping_address,
-                billing_address=order_data.billing_address,
-                zip_code=order_data.zip_code,
-                city=order_data.city,
-                state=order_data.state,
-                country=order_data.country,
-                payment_info=order_data.payment_info,
-                credit_card=order_data.credit_card,
-                bank_account=order_data.bank_account,
-                payment_method=order_data.payment_method.value if order_data.payment_method else None,
-                item_list=order_data.item_list,
-                item_name=order_data.item_name,
-                item_price=order_data.item_price,
-                quantity=order_data.quantity,
-                total_amount=order_data.total_amount,
-                tax_amount=order_data.tax_amount,
-                shipping_cost=order_data.shipping_cost,
-                discount=order_data.discount,
+                name=getattr(order_data, 'name', None),
+                phone=getattr(order_data, 'phone', None),
+                email=getattr(order_data, 'email', None),
+                address=getattr(order_data, 'address', None),
+                shipping_address=getattr(order_data, 'shipping_address', None),
+                billing_address=getattr(order_data, 'billing_address', None),
+                zip_code=getattr(order_data, 'zip_code', None),
+                city=getattr(order_data, 'city', None),
+                state=getattr(order_data, 'state', None),
+                country=getattr(order_data, 'country', None),
+                payment_info=getattr(order_data, 'payment_info', None),
+                credit_card=getattr(order_data, 'credit_card', None),
+                bank_account=getattr(order_data, 'bank_account', None),
+                payment_method=getattr(order_data, 'payment_method', None).value
+                if getattr(order_data, 'payment_method', None)
+                else None,
+                item_list=getattr(order_data, 'item_list', None),
+                item_name=getattr(order_data, 'item_name', None),
+                item_price=getattr(order_data, 'item_price', None),
+                quantity=getattr(order_data, 'quantity', None),
+                total_amount=getattr(order_data, 'total_amount', None),
+                tax_amount=getattr(order_data, 'tax_amount', None),
+                shipping_cost=getattr(order_data, 'shipping_cost', None),
+                discount=getattr(order_data, 'discount', None),
                 sensitivity_score=sensitivity_score,
                 status='active',
             )
@@ -190,13 +192,13 @@ class OrderService:
                 raise ServiceException(message='订单不存在')
 
             # 更新字段
-            update_data = order_data.dict(exclude_unset=True)
+            update_data = order_data.model_dump(exclude_unset=True)
             for field, value in update_data.items():
                 if hasattr(order, field):
                     setattr(order, field, value)
 
             # 更新时间
-            order.updated_at = datetime.utcnow()
+            order.updated_at = datetime.now(timezone.utc)
 
             # 保存更新
             await OrderDAO.update(query_db, order)

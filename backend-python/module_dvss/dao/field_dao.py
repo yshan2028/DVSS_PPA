@@ -20,7 +20,7 @@ class FieldDAO:
 
     async def create_field(self, field_data: FieldCreate) -> OrderField:
         """创建字段"""
-        field = OrderField(**field_data.dict())
+        field = OrderField(**field_data.model_dump())
         self.db.add(field)
         await self.db.commit()
         await self.db.refresh(field)
@@ -85,7 +85,7 @@ class FieldDAO:
         if not field:
             return None
 
-        update_data = field_data.dict(exclude_unset=True)
+        update_data = field_data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(field, key, value)
 
@@ -105,7 +105,7 @@ class FieldDAO:
 
     async def batch_update_fields(self, batch_data: FieldBatchUpdate) -> int:
         """批量更新字段"""
-        update_data = batch_data.dict(exclude={'field_ids'}, exclude_unset=True)
+        update_data = batch_data.model_dump(exclude={'field_ids'}, exclude_unset=True)
         if not update_data:
             return 0
 

@@ -2,7 +2,7 @@
 订单数据访问层 (DAO) - 异步版本
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import and_, asc, desc, func, or_, select
@@ -19,6 +19,9 @@ class OrderDAO:
     """
     订单管理模块数据库操作层
     """
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
 
     @classmethod
     async def create(cls, db: AsyncSession, order: OriginalOrder) -> OriginalOrder:
@@ -168,7 +171,7 @@ class OrderDAO:
         :return: 更新后的订单对象
         """
         try:
-            order.updated_at = datetime.utcnow()
+            order.updated_at = datetime.now(timezone.utc)
             await db.flush()
             await db.refresh(order)
             return order
@@ -217,7 +220,7 @@ class OrderDAO:
                 return False
 
             order.status = 'deleted'
-            order.updated_at = datetime.utcnow()
+            order.updated_at = datetime.now(timezone.utc)
             return True
         except Exception as e:
             logger.error(f'Error soft deleting order {order_id}: {str(e)}')
@@ -463,3 +466,96 @@ class OrderDAO:
         except Exception as e:
             logger.error(f'Error getting encrypted order by original_id {original_order_id}: {str(e)}')
             raise
+
+    @classmethod
+    async def get_by_condition(
+        cls,
+        db: AsyncSession,
+        filters: Optional[Dict[str, Any]] = None,
+        page: int = 1,
+        size: int = 20,
+        order_by: str = 'created_at',
+        order_direction: str = 'desc',
+    ) -> Tuple[List[OriginalOrder], int]:
+        """
+        根据条件获取订单列表（别名方法）
+        """
+        return await cls.get_list(db, page, size, filters, order_by, order_direction)
+
+    async def query_orders(
+        self, filters: Dict[str, Any] = None, page: int = 1, size: int = 20
+    ) -> Tuple[List[OriginalOrder], int]:
+        """查询订单（实例方法版本）"""
+        return await self.get_by_condition(self.db, filters, page, size)
+
+    async def get_orders_by_ids(self, order_ids: List[int]) -> List[OriginalOrder]:
+        """根据ID列表获取订单"""
+        try:
+            stmt = select(OriginalOrder).where(OriginalOrder.id.in_(order_ids))
+            result = await self.db.execute(stmt)
+            return list(result.scalars().all())
+        except Exception as e:
+            logger.error(f'Error getting orders by ids: {str(e)}')
+            raise
+
+    async def delete_orders(self, order_ids: List[int]) -> int:
+        """批量删除订单（软删除）"""
+        try:
+            stmt = select(OriginalOrder).where(OriginalOrder.id.in_(order_ids))
+            result = await self.db.execute(stmt)
+            orders = result.scalars().all()
+
+            count = 0
+            for order in orders:
+                order.status = 'deleted'
+                count += 1
+
+            await self.db.commit()
+            return count
+        except Exception as e:
+            await self.db.rollback()
+            logger.error(f'Error deleting orders: {str(e)}')
+            raise
+
+    async def get_order_statistics(self) -> Dict[str, Any]:
+        """获取订单统计信息"""
+        try:
+            # 总订单数
+            total_stmt = select(func.count(OriginalOrder.id)).where(OriginalOrder.status != 'deleted')
+            total_result = await self.db.execute(total_stmt)
+            total_orders = total_result.scalar()
+
+            # 按状态统计
+            status_stmt = (
+                select(OriginalOrder.status, func.count(OriginalOrder.id).label('count'))
+                .where(OriginalOrder.status != 'deleted')
+                .group_by(OriginalOrder.status)
+            )
+            status_result = await self.db.execute(status_stmt)
+            status_stats = {row[0]: row[1] for row in status_result.fetchall()}
+
+            return {
+                'total_orders': total_orders,
+                'status_distribution': status_stats,
+                'encrypted_orders': 0,  # 需要从加密订单表获取
+            }
+        except Exception as e:
+            logger.error(f'Error getting order statistics: {str(e)}')
+            raise
+
+    async def create_order(self, order_data: Dict[str, Any]) -> OriginalOrder:
+        """创建订单（实例方法版本）"""
+        try:
+            order = OriginalOrder(**order_data)
+            return await self.create(self.db, order)
+        except Exception as e:
+            logger.error(f'Error creating order: {str(e)}')
+            raise
+
+    async def get_encrypted_by_id(self, encrypted_order_id: int) -> Optional[EncryptedOrder]:
+        """获取加密订单（实例方法版本）"""
+        return await self.get_encrypted_order_by_id(self.db, encrypted_order_id)
+
+    async def create_encrypted_order_instance(self, encrypted_order: EncryptedOrder) -> EncryptedOrder:
+        """创建加密订单（实例方法版本）"""
+        return await self.create_encrypted_order(self.db, encrypted_order)

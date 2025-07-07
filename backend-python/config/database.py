@@ -45,8 +45,8 @@ async def init_create_table():
 
     logger = LogUtil.get_logger('database')
     logger.info('异步初始化数据库连接...')
-    
+
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     logger.info('数据库表创建完成')

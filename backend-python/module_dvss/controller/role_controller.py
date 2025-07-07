@@ -37,7 +37,7 @@ async def create_role(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='角色名已存在')
 
     role = await role_service.create_role(role_data)
-    return ResponseUtil.success(RoleResponse.from_orm(role), '角色创建成功')
+    return ResponseUtil.success(RoleResponse.model_validate(role), '角色创建成功')
 
 
 @router.get('/', response_model=PageResponse, summary='获取角色列表')
@@ -56,10 +56,10 @@ async def get_roles(
         page=page, page_size=page_size, name=name, is_active=is_active
     )
 
-    role_list = [RoleList.from_orm(role) for role in roles]
+    role_list = [RoleList.model_validate(role) for role in roles]
 
     return ResponseUtil.paginated_success(
-        data=role_list, total=total, page=page, size=page_size, message='获取角色列表成功'
+        items=role_list, total=total, page=page, size=page_size, message='获取角色列表成功'
     )
 
 
@@ -72,7 +72,7 @@ async def get_role(role_id: int, db: AsyncSession = Depends(get_db), current_use
     if not role:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='角色不存在')
 
-    return ResponseUtil.success(RoleResponse.from_orm(role), '获取角色详情成功')
+    return ResponseUtil.success(RoleResponse.model_validate(role), '获取角色详情成功')
 
 
 @router.put('/{role_id}', response_model=ApiResponse[RoleResponse], summary='更新角色')
@@ -96,7 +96,7 @@ async def update_role(
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='角色名已被其他角色使用')
 
     updated_role = await role_service.update_role(role_id, role_data)
-    return ResponseUtil.success(RoleResponse.from_orm(updated_role), '角色更新成功')
+    return ResponseUtil.success(RoleResponse.model_validate(updated_role), '角色更新成功')
 
 
 @router.delete('/{role_id}', response_model=ApiResponse, summary='删除角色')
@@ -136,7 +136,7 @@ async def set_role_permissions(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='角色不存在')
 
     result_permissions = await role_service.set_role_permissions(role_id, permissions)
-    permission_responses = [RolePermissionResponse.from_orm(perm) for perm in result_permissions]
+    permission_responses = [RolePermissionResponse.model_validate(perm) for perm in result_permissions]
 
     return ResponseUtil.success(permission_responses, '角色权限设置成功')
 
@@ -153,6 +153,6 @@ async def get_role_permissions(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='角色不存在')
 
     permissions = await role_service.get_role_permissions(role_id)
-    permission_responses = [RolePermissionResponse.from_orm(perm) for perm in permissions]
+    permission_responses = [RolePermissionResponse.model_validate(perm) for perm in permissions]
 
     return ResponseUtil.success(permission_responses, '获取角色权限成功')

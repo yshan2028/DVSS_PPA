@@ -22,8 +22,19 @@ class ShardInfo(Base):
     shard_index = Column(Integer, nullable=False, comment='分片索引')
     shard_data = Column(Text, nullable=False, comment='分片数据')
     storage_node = Column(String(100), nullable=True, comment='存储节点')
+    storage_location = Column(String(200), nullable=True, comment='存储位置')
     checksum = Column(String(128), nullable=False, comment='校验和')
     status = Column(String(20), default='active', nullable=False, index=True, comment='状态')
+
+    # 分片算法相关字段
+    threshold = Column(Integer, nullable=True, comment='重构阈值')
+    total_shards = Column(Integer, nullable=True, comment='总分片数')
+    algorithm = Column(String(50), nullable=True, comment='分片算法')
+
+    # 关联用户信息
+    user_id = Column(Integer, nullable=True, comment='用户ID')
+    original_order_id = Column(Integer, nullable=True, comment='原始订单ID')
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment='创建时间')
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), comment='更新时间')
 
@@ -45,8 +56,14 @@ class ShardInfo(Base):
             'shard_index': self.shard_index,
             'shard_data': self.shard_data,
             'storage_node': self.storage_node,
+            'storage_location': self.storage_location,
             'checksum': self.checksum,
             'status': self.status,
+            'threshold': self.threshold,
+            'total_shards': self.total_shards,
+            'algorithm': self.algorithm,
+            'user_id': self.user_id,
+            'original_order_id': self.original_order_id,
             'created_at': self.created_at,
             'updated_at': self.updated_at,
         }

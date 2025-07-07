@@ -57,7 +57,7 @@ class RoleService:
                 raise ValueError('角色不存在')
 
             # 更新字段
-            update_data = role_data.dict(exclude_unset=True)
+            update_data = role_data.model_dump(exclude_unset=True)
             for field, value in update_data.items():
                 if hasattr(role, field):
                     setattr(role, field, value)

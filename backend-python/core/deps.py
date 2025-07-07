@@ -3,7 +3,7 @@
 提供数据库会话、认证等依赖
 """
 
-from typing import AsyncGenerator, Optional
+from typing import Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -18,8 +18,7 @@ security = HTTPBearer()
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security), 
-    db: AsyncSession = Depends(get_db)
+    credentials: HTTPAuthorizationCredentials = Depends(security), db: AsyncSession = Depends(get_db)
 ) -> User:
     """
     获取当前用户
@@ -91,8 +90,7 @@ async def get_admin_user(current_user: User = Depends(get_current_active_user)) 
 
 
 async def get_optional_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security), 
-    db: AsyncSession = Depends(get_db)
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security), db: AsyncSession = Depends(get_db)
 ) -> Optional[User]:
     """
     获取可选的当前用户（用于不需要强制认证的接口）

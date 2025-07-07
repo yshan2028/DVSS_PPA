@@ -63,17 +63,19 @@ class DataBaseSettings(BaseSettings):
     # SQLAlchemy配置
     sqlalchemy_database_url: Optional[str] = None
 
+    @classmethod
     @field_validator('sqlalchemy_database_url', mode='before')
-    def assemble_db_url(cls, v: Optional[str], info: Dict[str, Any]) -> str:
+    def assemble_db_url(cls, v: Optional[str], values: Dict[str, Any]) -> str:
         """组装数据库URL"""
         if v:
             return v
-        db_type = info.data.get('db_type')
-        db_host = info.data.get('db_host')
-        db_port = info.data.get('db_port')
-        db_username = info.data.get('db_username')
-        db_password = info.data.get('db_password')
-        db_database = info.data.get('db_database')
+        # 直接从环境变量获取值
+        db_type = os.getenv('DB_TYPE', 'mysql')
+        db_host = os.getenv('DB_HOST', 'localhost')
+        db_port = os.getenv('DB_PORT', '3306')
+        db_username = os.getenv('DB_USERNAME', 'root')
+        db_password = os.getenv('DB_PASSWORD', 'password')
+        db_database = os.getenv('DB_DATABASE', 'dvss')
 
         if db_type == 'postgresql':
             return f'postgresql+psycopg2://{db_username}:{db_password}@{db_host}:{db_port}/{db_database}'
@@ -94,15 +96,17 @@ class RedisSettings(BaseSettings):
     redis_password: Optional[str] = os.getenv('REDIS_PASSWORD', None)
     redis_url: Optional[str] = None
 
+    @classmethod
     @field_validator('redis_url', mode='before')
-    def assemble_redis_url(cls, v: Optional[str], info: Dict[str, Any]) -> str:
+    def assemble_redis_url(cls, v: Optional[str], values: Dict[str, Any]) -> str:
         """组装Redis URL"""
         if v:
             return v
-        redis_host = info.data.get('redis_host')
-        redis_port = info.data.get('redis_port')
-        redis_db = info.data.get('redis_db')
-        redis_password = info.data.get('redis_password')
+        # 直接从环境变量获取值
+        redis_host = os.getenv('REDIS_HOST', 'localhost')
+        redis_port = os.getenv('REDIS_PORT', '6379')
+        redis_db = os.getenv('REDIS_DB', '0')
+        redis_password = os.getenv('REDIS_PASSWORD', None)
 
         if redis_password:
             return f'redis://:{redis_password}@{redis_host}:{redis_port}/{redis_db}'

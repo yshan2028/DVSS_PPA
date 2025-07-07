@@ -3,6 +3,7 @@
 提供各种数据验证方法
 """
 
+import json
 import re
 
 from datetime import datetime
@@ -144,8 +145,6 @@ class ValidationUtil:
             return False
 
         try:
-            import json
-
             json.loads(json_str)
             return True
         except (json.JSONDecodeError, TypeError):

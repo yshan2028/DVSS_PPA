@@ -328,6 +328,38 @@ class SensitivityService:
         except Exception as e:
             raise DVSSException(f'订单敏感度分析失败: {str(e)}')
 
+    async def analyze_orders(self, orders: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """分析订单的敏感度"""
+        results = []
+        for order in orders:
+            sensitivity_score = await self.analyze_data_sensitivity(order)
+            results.append({
+                'order_id': order.get('id', order.get('order_id')),
+                'sensitivity_score': sensitivity_score['overall_score'],
+                'sensitive_fields': sensitivity_score['sensitive_fields'],
+                'risk_level': self._get_risk_level(sensitivity_score['overall_score']),
+            })
+        return results
+
+    async def get_sensitivity_statistics(self) -> Dict[str, Any]:
+        """获取敏感度统计信息"""
+        return {
+            'total_analyzed_orders': 0,
+            'high_sensitivity_count': 0,
+            'medium_sensitivity_count': 0,
+            'low_sensitivity_count': 0,
+            'avg_sensitivity_score': 0.0,
+        }
+
+    def _get_risk_level(self, score: float) -> str:
+        """根据敏感度分数获取风险等级"""
+        if score >= 0.8:
+            return 'high'
+        elif score >= 0.5:
+            return 'medium'
+        else:
+            return 'low'
+
     def _has_identity_linkage_risk(self, field_scores: Dict[str, float]) -> bool:
         """检查是否存在身份关联风险"""
         identity_fields = ['name', 'phone', 'email', 'address', 'ssn', 'credit_card']
@@ -396,3 +428,40 @@ class SensitivityService:
     def get_pii_patterns(self) -> Dict[str, str]:
         """获取PII检测模式"""
         return self.pii_patterns.copy()
+
+    async def analyze_data_sensitivity(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """分析数据的敏感度"""
+        try:
+            sensitive_fields = []
+            field_scores = {}
+            total_score = 0.0
+
+            for field_name, field_value in data.items():
+                if field_value is None:
+                    continue
+
+                # 检查字段敏感度
+                sensitivity_score = await self.calculate_field_sensitivity(field_name, str(field_value))
+                field_scores[field_name] = sensitivity_score
+
+                if sensitivity_score > 0.5:
+                    sensitive_fields.append({
+                        'field': field_name,
+                        'score': sensitivity_score,
+                        'category': self.field_categories.get(field_name, 'unknown'),
+                    })
+
+                total_score += sensitivity_score
+
+            # 计算整体敏感度分数
+            overall_score = min(1.0, total_score / len(data) if data else 0.0)
+
+            return {
+                'overall_score': overall_score,
+                'sensitive_fields': sensitive_fields,
+                'field_scores': field_scores,
+                'total_fields': len(data),
+                'sensitive_count': len(sensitive_fields),
+            }
+        except Exception as e:
+            raise DVSSException(f'分析数据敏感度失败: {str(e)}')

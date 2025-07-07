@@ -10,7 +10,7 @@ import random
 
 from typing import Any, Dict, List
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from module_dvss.dao.order_dao import OrderDAO
 from module_dvss.dao.shard_dao import ShardDAO
@@ -116,7 +116,7 @@ class SimpleSecretSharing:
 
 
 class EncryptionService:
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
         self.order_dao = OrderDAO(db)
         self.shard_dao = ShardDAO(db)
@@ -147,7 +147,7 @@ class EncryptionService:
     async def encrypt_order(self, order_id: int, k: int, n: int) -> Dict[str, Any]:
         """加密订单"""
         # 获取原始订单
-        order = self.order_dao.get_by_id(order_id)
+        order = await self.order_dao.get_by_id(order_id)
         if not order:
             raise ValueError('订单不存在')
 
@@ -182,7 +182,7 @@ class EncryptionService:
             status='encrypted',
         )
 
-        encrypted_order = self.order_dao.create_encrypted_order(encrypted_order)
+        encrypted_order = await self.order_dao.create_encrypted_order_instance(encrypted_order)
 
         # 保存分片信息
         shard_hashes = []
@@ -199,7 +199,7 @@ class EncryptionService:
                 status='active',
             )
 
-            self.shard_dao.create_shard(shard_info)
+            await self.shard_dao.create_shard(shard_info)
 
         return {
             'encrypted_order_id': encrypted_order.id,
@@ -212,12 +212,12 @@ class EncryptionService:
     async def decrypt_order(self, encrypted_order_id: int) -> Dict[str, Any]:
         """解密订单"""
         # 获取加密订单
-        encrypted_order = self.order_dao.get_encrypted_by_id(encrypted_order_id)
+        encrypted_order = await self.order_dao.get_encrypted_by_id(encrypted_order_id)
         if not encrypted_order:
             raise ValueError('加密订单不存在')
 
         # 获取分片
-        shards = self.shard_dao.get_by_encrypted_order_id(encrypted_order_id)
+        shards = await self.shard_dao.get_by_encrypted_order_id(encrypted_order_id)
         if len(shards) < encrypted_order.k_value:
             raise ValueError('可用分片数量不足')
 
@@ -233,3 +233,50 @@ class EncryptionService:
             raise ValueError('数据完整性验证失败')
 
         return reconstructed_data
+
+    async def encrypt_orders(self, order_ids: List[int], k: int = 3, n: int = 5) -> List[Dict[str, Any]]:
+        """批量加密订单"""
+        results = []
+        for order_id in order_ids:
+            try:
+                result = await self.encrypt_order(order_id, k, n)
+                results.append(result)
+            except Exception as e:
+                results.append({'order_id': order_id, 'error': str(e)})
+        return results
+
+    async def get_encryption_statistics(self) -> Dict[str, Any]:
+        """获取加密统计信息"""
+        try:
+            # 这里可以实现获取加密统计的逻辑
+            return {
+                'total_encrypted_orders': 0,
+                'total_shards': 0,
+                'avg_k_value': 3,
+                'avg_n_value': 5,
+                'encryption_success_rate': 100.0,
+            }
+        except Exception as e:
+            raise ValueError(f'获取加密统计失败: {str(e)}')
+
+    async def decrypt_non_sensitive_fields(self, encrypted_order_id: int, fields: List[str], order_id: str = None) -> Dict[str, Any]:
+        """解密非敏感字段"""
+        try:
+            # 解密整个订单
+            order_data = await self.decrypt_order(encrypted_order_id)
+
+            # 只返回指定的非敏感字段
+            non_sensitive_fields = ['order_id', 'user_id', 'total_amount']
+            result = {}
+
+            for field in fields:
+                if field in non_sensitive_fields and field in order_data:
+                    result[field] = order_data[field]
+                    
+            # 如果提供了order_id参数，添加到结果中
+            if order_id:
+                result['order_id'] = order_id
+
+            return result
+        except Exception as e:
+            raise ValueError(f'解密非敏感字段失败: {str(e)}')

@@ -23,8 +23,8 @@ async def init_create_table():
     应用启动时异步初始化数据库连接和创建表
     """
     logger.info('异步初始化数据库连接...')
-    
+
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     logger.info('数据库表创建完成')

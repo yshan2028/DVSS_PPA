@@ -1,11 +1,12 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
 import bcrypt
 import jwt
 
 from jwt import ExpiredSignatureError, InvalidTokenError
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import Settings
 from exceptions.custom_exception import AuthenticationError, AuthorizationError
@@ -20,14 +21,17 @@ settings = Settings()
 class AuthService:
     """认证服务"""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
 
     async def login(self, login_data: LoginRequest) -> LoginResponse:
         try:
             logger.info(f'用户尝试登录: {login_data.username}')
 
-            user = self.db.query(User).filter(User.username == login_data.username).first()
+            # 使用异步查询
+            stmt = select(User).where(User.username == login_data.username)
+            result = await self.db.execute(stmt)
+            user = result.scalar_one_or_none()
             logger.info(f'数据库查询结果: user={"存在" if user else "不存在"}')
 
             if not user:
@@ -52,17 +56,17 @@ class AuthService:
             })
 
             # 更新最后登录时间（统一使用 UTC）
-            user.last_login = datetime.utcnow()
-            self.db.commit()
+            user.last_login = datetime.now(timezone.utc)
+            await self.db.commit()
 
             user_resp = UserResponse(
                 id=user.id,
                 username=user.username,
                 email=user.email,
                 full_name=user.full_name,
-                phone=user.phone,
+                phone=None,  # User实体模型中没有phone字段
                 is_active=user.is_active,
-                is_superuser=user.is_superuser,
+                is_superuser=False,  # User实体模型中没有is_superuser字段
                 role_id=user.role.id if user.role else None,
                 created_at=user.created_at,
                 last_login=user.last_login,
@@ -74,7 +78,6 @@ class AuthService:
                 token_type='bearer',
                 expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
                 user=user_resp,
-                user_info=user_resp,  # 同样返回一份给 user_info
             )
 
         except (AuthenticationError, AuthorizationError):
@@ -88,7 +91,10 @@ class AuthService:
             payload = self._decode_token(refresh_token)
             user_id = int(payload.get('sub'))
 
-            user = self.db.query(User).filter(User.id == user_id).first()
+            # 使用异步查询
+            stmt = select(User).where(User.id == user_id)
+            result = await self.db.execute(stmt)
+            user = result.scalar_one_or_none()
             if not user or not user.is_active:
                 raise AuthenticationError('用户不存在或已被禁用')
 
@@ -116,7 +122,10 @@ class AuthService:
             payload = self._decode_token(token)
             user_id = int(payload.get('sub'))
 
-            user = self.db.query(User).filter(User.id == user_id).first()
+            # 使用异步查询
+            stmt = select(User).where(User.id == user_id)
+            result = await self.db.execute(stmt)
+            user = result.scalar_one_or_none()
             if not user:
                 raise AuthenticationError('用户不存在')
             if not user.is_active:
@@ -151,14 +160,14 @@ class AuthService:
     @staticmethod
     def _create_access_token(data: Dict[str, Any]) -> str:
         to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         to_encode.update({'exp': expire, 'type': 'access'})
         return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
     @staticmethod
     def _create_refresh_token(data: Dict[str, Any]) -> str:
         to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         to_encode.update({'exp': expire, 'type': 'refresh'})
         return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
@@ -172,7 +181,10 @@ class AuthService:
             raise AuthenticationError('令牌无效')
 
     async def get_current_user_permissions(self, user_id: int) -> dict:
-        user = self.db.query(User).filter(User.id == user_id).first()
+        # 使用异步查询
+        stmt = select(User).where(User.id == user_id)
+        result = await self.db.execute(stmt)
+        user = result.scalar_one_or_none()
         if not user or not user.role:
             return {'permissions': [], 'field_permissions': {}}
 

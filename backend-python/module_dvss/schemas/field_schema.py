@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class SensitivityLevel(str, Enum):
@@ -53,11 +53,12 @@ class FieldBase(BaseModel):
     is_required: bool = Field(False, description='是否必填')
     is_active: bool = Field(True, description='是否激活')
 
-    @validator('sensitivity_score')
-    def validate_sensitivity_score(cls, v, values):
+    @field_validator('sensitivity_score')
+    @classmethod
+    def validate_sensitivity_score(cls, v, info):
         """验证敏感度分值与等级的一致性"""
-        if 'sensitivity_level' in values:
-            level = values['sensitivity_level']
+        if hasattr(info, 'data') and 'sensitivity_level' in info.data:
+            level = info.data['sensitivity_level']
             if level == SensitivityLevel.LOW and not (0.0 <= v < 0.3):
                 raise ValueError('低敏感度等级的分值应在0.0-0.3之间')
             elif level == SensitivityLevel.MEDIUM and not (0.3 <= v < 0.6):

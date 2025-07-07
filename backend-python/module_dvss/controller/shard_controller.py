@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.deps import get_current_user, get_db
 from exceptions.custom_exception import AuthorizationError, NotFoundError, ValidationError
@@ -24,14 +24,6 @@ from module_dvss.schemas.shard_schema import (
 from module_dvss.service.shard_service import ShardService
 from utils.response_util import ResponseUtil
 
-
-# 简单的PageRequest模型
-class PageRequest:
-    def __init__(self, page: int, size: int):
-        self.page = page
-        self.size = size
-
-
 router = APIRouter(prefix='/api/v1/shards', tags=['分片管理'])
 
 
@@ -41,17 +33,14 @@ async def get_shards(
     size: int = Query(20, ge=1, le=100, description='每页大小'),
     order_id: Optional[str] = Query(None, description='订单ID'),
     status: Optional[str] = Query(None, description='分片状态'),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     """获取分片列表"""
     try:
         shard_service = ShardService(db)
-        page_request = PageRequest(page=page, size=size)
 
-        result = await shard_service.get_shard_list(
-            page_request=page_request, order_id=order_id, status=status, current_user_id=current_user.id
-        )
+        result = await shard_service.get_shard_list(user_id=current_user.id, page=page, size=size)
 
         return ResponseUtil.success(data=result, message='获取分片列表成功')
     except Exception as e:
@@ -60,7 +49,7 @@ async def get_shards(
 
 @router.post('', response_model=ApiResponse[ShardInfoResponse])
 async def create_shard(
-    shard_data: ShardInfoCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)
+    shard_data: ShardInfoCreate, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     """创建分片"""
     try:
@@ -75,7 +64,7 @@ async def create_shard(
 
 
 @router.get('/{shard_id}', response_model=ApiResponse[ShardInfoResponse])
-async def get_shard_detail(shard_id: str, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+async def get_shard_detail(shard_id: int, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     """获取分片详情"""
     try:
         shard_service = ShardService(db)
@@ -92,7 +81,10 @@ async def get_shard_detail(shard_id: str, db: Session = Depends(get_db), current
 
 @router.put('/{shard_id}', response_model=ApiResponse[ShardInfoResponse])
 async def update_shard(
-    shard_id: str, shard_data: ShardInfoUpdate, db: Session = Depends(get_db), current_user=Depends(get_current_user)
+    shard_id: int,
+    shard_data: ShardInfoUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
 ):
     """更新分片信息"""
     try:
@@ -111,7 +103,7 @@ async def update_shard(
 
 
 @router.delete('/{shard_id}', response_model=ApiResponse[bool])
-async def delete_shard(shard_id: str, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+async def delete_shard(shard_id: str, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     """删除分片"""
     try:
         shard_service = ShardService(db)
@@ -129,7 +121,7 @@ async def delete_shard(shard_id: str, db: Session = Depends(get_db), current_use
 
 
 @router.get('/{shard_id}/download')
-async def download_shard(shard_id: str, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+async def download_shard(shard_id: str, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     """下载分片数据"""
     try:
         shard_service = ShardService(db)
@@ -155,7 +147,7 @@ async def download_shard(shard_id: str, db: Session = Depends(get_db), current_u
 
 @router.post('/batch-delete', response_model=ApiResponse[bool])
 async def batch_delete_shards(
-    shard_ids: List[str], db: Session = Depends(get_db), current_user=Depends(get_current_user)
+    shard_ids: List[str], db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     """批量删除分片"""
     try:
@@ -175,7 +167,7 @@ async def batch_delete_shards(
 
 
 @router.get('/stats/overview', response_model=ApiResponse[ShardStatsResponse])
-async def get_shard_stats(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+async def get_shard_stats(db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     """获取分片统计信息"""
     try:
         shard_service = ShardService(db)
@@ -187,7 +179,7 @@ async def get_shard_stats(db: Session = Depends(get_db), current_user=Depends(ge
 
 
 @router.post('/{shard_id}/validate', response_model=ApiResponse[bool])
-async def validate_shard(shard_id: str, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+async def validate_shard(shard_id: str, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     """验证分片完整性"""
     try:
         shard_service = ShardService(db)
@@ -203,7 +195,7 @@ async def validate_shard(shard_id: str, db: Session = Depends(get_db), current_u
 
 
 @router.post('/{shard_id}/reprocess', response_model=ApiResponse[bool])
-async def reprocess_shard(shard_id: str, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+async def reprocess_shard(shard_id: str, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     """重新处理分片"""
     try:
         shard_service = ShardService(db)

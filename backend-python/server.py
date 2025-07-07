@@ -10,6 +10,7 @@ from fastapi import FastAPI
 
 # 本地模块导入
 from config.database import init_create_table
+from config.settings import settings
 from exceptions.handle import register_exception_handlers
 from middlewares.handle import handle_middleware
 from module_dvss.controller.auth_controller import router as auth_router
@@ -21,7 +22,6 @@ from module_dvss.controller.order_controller import router as order_router
 from module_dvss.controller.role_controller import router as role_router
 from module_dvss.controller.shard_controller import router as shard_router
 from module_dvss.controller.user_controller import router as user_router
-from module_dvss.entity import Base  # 导入所有实体模型
 from utils.log_util import LogUtil
 
 # 初始化日志
@@ -30,7 +30,7 @@ logger = LogUtil.get_logger(__name__)
 
 async def init_database():
     """异步初始化数据库表结构
-    
+
     注意：
     - SQLAlchemy只负责创建表结构
     - 演示数据由Docker Compose的MySQL初始化脚本插入
@@ -41,7 +41,7 @@ async def init_database():
         await init_create_table()
         logger.info('✅ 数据库表结构已就绪')
         logger.info('📋 演示数据由 /scripts/init-mysql.sql 初始化')
-        
+
     except Exception as exc:
         logger.exception('❌ 数据库表结构初始化失败', exc_info=exc)
         raise
@@ -106,7 +106,7 @@ async def health_check():
     return {
         'status': 'healthy',
         'service': 'DVSS-PPA System',
-        'version': app.version,
+        'version': settings.app.app_version,
     }
 
 
@@ -114,8 +114,8 @@ async def health_check():
 async def root():
     return {
         'message': '欢迎使用 DVSS-PPA System API',
-        'version': app.version,
-        'docs': app.docs_url,
+        'version': settings.app.app_version,
+        'docs': settings.app.docs_url,
     }
 
 

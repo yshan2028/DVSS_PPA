@@ -7,7 +7,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class OrderStatus(str, Enum):
@@ -58,14 +58,16 @@ class OrderBase(BaseModel):
     shipping_cost: Optional[Decimal] = Field(None, ge=0, description='运费')
     discount: Optional[Decimal] = Field(None, ge=0, description='折扣')
 
-    @validator('credit_card')
+    @field_validator('credit_card')
+    @classmethod
     def mask_credit_card(cls, v):
         """信用卡号脱敏"""
         if v and len(v) > 4:
             return '*' * (len(v) - 4) + v[-4:]
         return v
 
-    @validator('bank_account')
+    @field_validator('bank_account')
+    @classmethod
     def mask_bank_account(cls, v):
         """银行账户脱敏"""
         if v and len(v) > 4:
@@ -146,10 +148,11 @@ class OrderEncrypt(BaseModel):
     k_value: int = Field(..., ge=2, description='分片阈值')
     n_value: int = Field(..., ge=3, description='分片总数')
 
-    @validator('n_value')
-    def validate_n_k_relation(cls, v, values):
+    @classmethod
+    @field_validator('n_value')
+    def validate_n_k_relation(cls, v, info):
         """验证n和k的关系"""
-        if 'k_value' in values and v <= values['k_value']:
+        if hasattr(info, 'data') and 'k_value' in info.data and v <= info.data['k_value']:
             raise ValueError('分片总数必须大于分片阈值')
         return v
 

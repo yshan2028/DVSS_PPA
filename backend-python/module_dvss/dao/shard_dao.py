@@ -20,8 +20,8 @@ class ShardDAO:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def create_shard(self, shard_data: dict) -> ShardInfo:
-        """创建新的数据分片"""
+    async def create_shard_from_dict(self, shard_data: dict) -> ShardInfo:
+        """创建新的数据分片（从字典数据）"""
         try:
             shard = ShardInfo(**shard_data)
             self.db.add(shard)
@@ -122,6 +122,20 @@ class ShardDAO:
             logger.error(f'根据订单获取分片失败: {e}')
             raise DatabaseError(f'根据订单获取分片失败: {str(e)}')
 
+    async def get_shards_by_order_id(self, order_id: int) -> List[ShardInfo]:
+        """根据订单ID获取分片（别名方法）"""
+        return await self.get_shards_by_order(order_id)
+
+    async def get_by_encrypted_order_id(self, encrypted_order_id: int) -> List[ShardInfo]:
+        """根据加密订单ID获取分片"""
+        try:
+            stmt = select(ShardInfo).where(ShardInfo.encrypted_order_id == encrypted_order_id)
+            result = await self.db.execute(stmt)
+            return list(result.scalars().all())
+        except Exception as e:
+            logger.error(f'根据加密订单获取分片失败: {e}')
+            raise DatabaseError(f'根据加密订单获取分片失败: {str(e)}')
+
     async def get_statistics(self) -> dict:
         """获取分片统计信息"""
         try:
@@ -160,3 +174,15 @@ class ShardDAO:
         except Exception as e:
             logger.error(f'获取分片总数失败: {e}')
             raise DatabaseError(f'获取分片总数失败: {str(e)}')
+
+    async def create_shard(self, shard_info: ShardInfo) -> ShardInfo:
+        """创建分片（支持实体对象）"""
+        try:
+            self.db.add(shard_info)
+            await self.db.commit()
+            await self.db.refresh(shard_info)
+            return shard_info
+        except Exception as e:
+            await self.db.rollback()
+            logger.error(f'创建分片失败: {e}')
+            raise DatabaseError(f'创建分片失败: {str(e)}')

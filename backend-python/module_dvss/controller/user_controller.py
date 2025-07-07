@@ -35,7 +35,7 @@ async def create_user(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='邮箱已存在')
 
     user = await user_service.create_user(user_data)
-    return ResponseUtil.success(UserResponse.from_orm(user), '用户创建成功')
+    return ResponseUtil.success(UserResponse.model_validate(user), '用户创建成功')
 
 
 @router.get('/', response_model=PageResponse, summary='获取用户列表')
@@ -55,10 +55,10 @@ async def get_users(
         page=page, page_size=page_size, username=username, email=email, is_active=is_active
     )
 
-    user_list = [UserList.from_orm(user) for user in users]
+    user_list = [UserList.model_validate(user) for user in users]
 
     return ResponseUtil.paginated_success(
-        data=user_list, total=total, page=page, page_size=page_size, message='获取用户列表成功'
+        items=user_list, total=total, page=page, size=page_size, message='获取用户列表成功'
     )
 
 
@@ -71,7 +71,7 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_db), current_use
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='用户不存在')
 
-    return ResponseUtil.success(UserResponse.from_orm(user), '获取用户详情成功')
+    return ResponseUtil.success(UserResponse.model_validate(user), '获取用户详情成功')
 
 
 @router.put('/{user_id}', response_model=ApiResponse[UserResponse], summary='更新用户')
@@ -95,7 +95,7 @@ async def update_user(
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='邮箱已被其他用户使用')
 
     updated_user = await user_service.update_user(user_id, user_data)
-    return ResponseUtil.success(UserResponse.from_orm(updated_user), '用户更新成功')
+    return ResponseUtil.success(UserResponse.model_validate(updated_user), '用户更新成功')
 
 
 @router.delete('/{user_id}', response_model=ApiResponse, summary='删除用户')
@@ -147,7 +147,7 @@ async def toggle_user_status(
 
     updated_user = await user_service.update_user_status(user_id, is_active)
     status_text = '启用' if is_active else '禁用'
-    return ResponseUtil.success(UserResponse.from_orm(updated_user), f'用户{status_text}成功')
+    return ResponseUtil.success(UserResponse.model_validate(updated_user), f'用户{status_text}成功')
 
 
 @router.post('/change-password', response_model=ApiResponse, summary='修改密码')

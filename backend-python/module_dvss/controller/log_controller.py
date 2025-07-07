@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.deps import get_current_user, get_db
 from module_dvss.dao.log_dao import LogDAO
@@ -33,24 +33,31 @@ async def get_logs(
     user_id: Optional[int] = Query(None, description='用户ID'),
     start_date: Optional[datetime] = Query(None, description='开始日期'),
     end_date: Optional[datetime] = Query(None, description='结束日期'),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """获取系统操作日志列表"""
     try:
         log_dao = LogDAO(db)
         service = AuditService(log_dao)
-        result = await service.search_logs(
-            LogSearchRequest(
-                page=page,
-                size=size,
-                log_type=log_type,
-                operation_type=operation_type,
-                user_id=user_id,
-                start_date=start_date,
-                end_date=end_date,
-            )
+        search_request = LogSearchRequest(
+            keyword=None,
+            log_type=log_type,
+            level=None,
+            operation_type=operation_type,
+            user_id=user_id,
+            username=None,
+            resource_type=None,
+            resource_id=None,
+            ip_address=None,
+            start_date=start_date,
+            end_date=end_date,
+            is_success=None,
+            has_error=None,
+            page=page,
+            size=size,
         )
+        result = await service.search_logs(search_request, page, size)
         return ResponseUtil.success(data=result, message='获取日志列表成功')
     except Exception as e:
         return ResponseUtil.error(message=f'获取日志列表失败: {str(e)}')
@@ -58,20 +65,20 @@ async def get_logs(
 
 @router.post('/search', response_model=PageResponse)
 async def search_logs(
-    request: LogSearchRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+    request: LogSearchRequest, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """高级日志搜索"""
     try:
         log_dao = LogDAO(db)
         service = AuditService(log_dao)
-        result = await service.search_logs(request)
+        result = await service.search_logs(request, request.page or 1, request.size or 20)
         return ResponseUtil.success(data=result, message='搜索日志成功')
     except Exception as e:
         return ResponseUtil.error(message=f'搜索日志失败: {str(e)}')
 
 
 @router.get('/stats', response_model=ApiResponse[LogStatsResponse])
-async def get_log_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def get_log_stats(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     """获取日志统计信息"""
     try:
         log_dao = LogDAO(db)
@@ -89,7 +96,7 @@ async def get_log_stats(db: Session = Depends(get_db), current_user: User = Depe
 
 @router.post('/audit-report', response_model=ApiResponse[AuditReportResponse])
 async def generate_audit_report(
-    request: AuditReportRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+    request: AuditReportRequest, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """生成审计报告"""
     try:

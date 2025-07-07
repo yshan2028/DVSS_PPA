@@ -4,7 +4,7 @@
 """
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.deps import get_current_user, get_db
 from module_dvss.entity.user import User
@@ -16,7 +16,7 @@ router = APIRouter()
 
 
 @router.post('/login', response_model=LoginResponse)
-async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
+async def login(login_data: LoginRequest, db: AsyncSession = Depends(get_db)):
     """用户登录"""
     auth_service = AuthService(db)
     return await auth_service.login(login_data)
@@ -44,7 +44,7 @@ async def get_profile(current_user: User = Depends(get_current_user)):
 
 
 @router.get('/permissions')
-async def get_permissions(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def get_permissions(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """获取用户权限"""
     auth_service = AuthService(db)
     return await auth_service.get_current_user_permissions(current_user.id)
@@ -52,7 +52,9 @@ async def get_permissions(current_user: User = Depends(get_current_user), db: Se
 
 @router.post('/change-password', response_model=ApiResponse)
 async def change_password(
-    password_data: ChangePasswordRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    password_data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """修改密码"""
     # 这里可以添加修改密码的逻辑

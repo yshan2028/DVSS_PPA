@@ -2,7 +2,7 @@
 日志数据访问层 (DAO) - 异步版本
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import and_, asc, desc, func, select
@@ -179,63 +179,12 @@ class LogDAO:
             page=page, size=size, filters={'start_date': start_date, 'end_date': end_date}
         )
 
-    async def get_statistics(self, days: int = 30) -> Dict[str, Any]:
-        """获取日志统计信息"""
-        try:
-            end_date = datetime.utcnow()
-            start_date = end_date - timedelta(days=days)
 
-            # 总操作数
-            total_stmt = select(func.count(OperationLog.id)).where(OperationLog.created_at >= start_date)
-            total_result = await self.db.execute(total_stmt)
-            total_operations = total_result.scalar()
-
-            # 成功操作数
-            success_stmt = select(func.count(OperationLog.id)).where(
-                and_(OperationLog.created_at >= start_date, OperationLog.status == 'success')
-            )
-            success_result = await self.db.execute(success_stmt)
-            success_operations = success_result.scalar()
-
-            # 失败操作数
-            failure_operations = total_operations - success_operations
-
-            # 操作类型分布
-            type_stmt = (
-                select(OperationLog.operation_type, func.count(OperationLog.id).label('count'))
-                .where(OperationLog.created_at >= start_date)
-                .group_by(OperationLog.operation_type)
-            )
-            type_result = await self.db.execute(type_stmt)
-            operation_types = {row[0]: row[1] for row in type_result.fetchall()}
-
-            # 资源类型分布
-            resource_stmt = (
-                select(OperationLog.resource_type, func.count(OperationLog.id).label('count'))
-                .where(OperationLog.created_at >= start_date)
-                .group_by(OperationLog.resource_type)
-            )
-            resource_result = await self.db.execute(resource_stmt)
-            resource_types = {row[0]: row[1] for row in resource_result.fetchall()}
-
-            return {
-                'total_operations': total_operations,
-                'success_operations': success_operations,
-                'failure_operations': failure_operations,
-                'success_rate': round(success_operations / total_operations * 100, 2) if total_operations > 0 else 0,
-                'operation_types': operation_types,
-                'resource_types': resource_types,
-                'period_days': days,
-            }
-
-        except Exception as e:
-            logger.error(f'Error getting log statistics: {str(e)}')
-            raise
 
     async def delete_old_logs(self, days: int = 90) -> int:
         """删除旧日志"""
         try:
-            cutoff_date = datetime.utcnow() - timedelta(days=days)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
             stmt = select(OperationLog).where(OperationLog.created_at < cutoff_date)
             result = await self.db.execute(stmt)
             logs_to_delete = result.scalars().all()
@@ -275,3 +224,103 @@ class LogDAO:
         # 暂时返回模拟对象
         logger.info(f'Creating security log: {log_data}')
         return {'id': 1, 'message': 'Security log created'}
+
+    async def get_user_activities(self, user_id: int, start_date: datetime, end_date: datetime) -> List[OperationLog]:
+        """获取用户活动日志（时间范围版本）"""
+        try:
+            stmt = (
+                select(OperationLog)
+                .where(
+                    and_(
+                        OperationLog.user_id == str(user_id),
+                        OperationLog.created_at >= start_date,
+                        OperationLog.created_at <= end_date,
+                    )
+                )
+                .order_by(desc(OperationLog.created_at))
+            )
+
+            result = await self.db.execute(stmt)
+            return list(result.scalars().all())
+
+        except Exception as e:
+            logger.error(f'Error getting user activities for user {user_id}: {str(e)}')
+            raise
+
+    async def get_user_recent_activities(self, user_id: int, hours: int = 24) -> List[OperationLog]:
+        """获取用户最近活动日志"""
+        try:
+            from datetime import timedelta
+
+            end_date = datetime.now(timezone.utc)
+            start_date = end_date - timedelta(hours=hours)
+
+            stmt = (
+                select(OperationLog)
+                .where(and_(OperationLog.user_id == str(user_id), OperationLog.created_at >= start_date))
+                .order_by(desc(OperationLog.created_at))
+            )
+
+            result = await self.db.execute(stmt)
+            return list(result.scalars().all())
+
+        except Exception as e:
+            logger.error(f'Error getting user recent activities for user {user_id}: {str(e)}')
+            raise
+
+    async def get_statistics(self, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+        """获取日志统计信息（按时间范围）"""
+        try:
+            # 总操作数
+            total_stmt = select(func.count(OperationLog.id)).where(
+                and_(OperationLog.created_at >= start_date, OperationLog.created_at <= end_date)
+            )
+            total_result = await self.db.execute(total_stmt)
+            total_operations = total_result.scalar()
+
+            # 成功操作数
+            success_stmt = select(func.count(OperationLog.id)).where(
+                and_(
+                    OperationLog.created_at >= start_date,
+                    OperationLog.created_at <= end_date,
+                    OperationLog.status == 'success',
+                )
+            )
+            success_result = await self.db.execute(success_stmt)
+            success_operations = success_result.scalar()
+
+            # 失败操作数
+            failure_operations = total_operations - success_operations
+
+            # 操作类型分布
+            type_stmt = (
+                select(OperationLog.operation_type, func.count(OperationLog.id).label('count'))
+                .where(and_(OperationLog.created_at >= start_date, OperationLog.created_at <= end_date))
+                .group_by(OperationLog.operation_type)
+            )
+            type_result = await self.db.execute(type_stmt)
+            operation_types = {row[0]: row[1] for row in type_result.fetchall()}
+
+            # 资源类型分布
+            resource_stmt = (
+                select(OperationLog.resource_type, func.count(OperationLog.id).label('count'))
+                .where(and_(OperationLog.created_at >= start_date, OperationLog.created_at <= end_date))
+                .group_by(OperationLog.resource_type)
+            )
+            resource_result = await self.db.execute(resource_stmt)
+            resource_types = {row[0]: row[1] for row in resource_result.fetchall()}
+
+            return {
+                'total_operations': total_operations,
+                'success_operations': success_operations,
+                'failure_operations': failure_operations,
+                'success_rate': round(success_operations / total_operations * 100, 2) if total_operations > 0 else 0,
+                'operation_types': operation_types,
+                'resource_types': resource_types,
+                'start_date': start_date,
+                'end_date': end_date,
+            }
+
+        except Exception as e:
+            logger.error(f'Error getting log statistics: {str(e)}')
+            raise

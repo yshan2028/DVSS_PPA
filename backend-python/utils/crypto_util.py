@@ -111,7 +111,7 @@ class CryptoUtil:
             encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
 
-        return (base64.b64encode(private_pem).decode('utf-8'), base64.b64encode(public_pem).decode('utf-8'))
+        return base64.b64encode(private_pem).decode('utf-8'), base64.b64encode(public_pem).decode('utf-8')
 
     @staticmethod
     def rsa_encrypt(data: str, public_key_b64: str) -> str:

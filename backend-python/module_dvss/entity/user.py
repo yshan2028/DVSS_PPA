@@ -2,7 +2,7 @@
 用户实体模型
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
@@ -21,8 +21,8 @@ class User(Base):
     department = Column(String(50))
     is_active = Column(Boolean, default=True)
     role_id = Column(Integer, ForeignKey('roles.id'))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     last_login = Column(DateTime)
 
     # 关系

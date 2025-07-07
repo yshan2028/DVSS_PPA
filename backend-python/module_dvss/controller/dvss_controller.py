@@ -4,7 +4,7 @@ DVSS核心控制器
 """
 
 from fastapi import APIRouter, Depends, File, UploadFile
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.deps import get_current_user, get_db
 from exceptions.custom_exception import AuthorizationError, NotFoundError, ValidationError
@@ -19,7 +19,7 @@ router = APIRouter(prefix='/api/v1/dvss', tags=['DVSS核心'])
 @router.post('/upload')
 async def upload_orders(
     file: UploadFile = File(..., description='订单文件'),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     """上传订单文件"""
@@ -53,13 +53,13 @@ async def upload_orders(
 
 
 @router.post('/query')
-async def query_orders(request: dict, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+async def query_orders(request: dict, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     """查询订单"""
     try:
         dvss_service = DVSSService(db)
         result = await dvss_service.query_orders(request=request, current_user_id=current_user.id)
 
-        return ResponseUtil.success(data=result.dict(), message='查询成功')
+        return ResponseUtil.success(data=result, message='查询成功')
 
     except AuthorizationError as e:
         return ResponseUtil.error(message=str(e), code=403)
@@ -69,7 +69,7 @@ async def query_orders(request: dict, db: Session = Depends(get_db), current_use
 
 
 @router.delete('/orders')
-async def delete_orders(request: dict, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+async def delete_orders(request: dict, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     """删除订单"""
     try:
         dvss_service = DVSSService(db)
@@ -87,7 +87,7 @@ async def delete_orders(request: dict, db: Session = Depends(get_db), current_us
 
 
 @router.get('/statistics')
-async def get_statistics(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+async def get_statistics(db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     """获取DVSS统计信息"""
     try:
         dvss_service = DVSSService(db)

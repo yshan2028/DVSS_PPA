@@ -38,7 +38,7 @@ class FieldService:
             field = await self.field_dao.create_field(field_data)
             logger.info(f'成功创建字段: {field.field_name}')
 
-            return FieldResponse.from_orm(field)
+            return FieldResponse.model_validate(field)
         except Exception as e:
             logger.error(f'创建字段失败: {str(e)}')
             raise
@@ -47,7 +47,7 @@ class FieldService:
         """根据ID获取字段"""
         field = await self.field_dao.get_field_by_id(field_id)
         if field:
-            return FieldResponse.from_orm(field)
+            return FieldResponse.model_validate(field)
         return None
 
     async def get_fields_list(
@@ -70,7 +70,7 @@ class FieldService:
             search=search,
         )
 
-        field_list = [FieldList.from_orm(field) for field in fields]
+        field_list = [FieldList.model_validate(field) for field in fields]
         return field_list, total
 
     async def update_field(self, field_id: int, field_data: FieldUpdate) -> Optional[FieldResponse]:
@@ -85,7 +85,7 @@ class FieldService:
             field = await self.field_dao.update_field(field_id, field_data)
             if field:
                 logger.info(f'成功更新字段: {field.field_name}')
-                return FieldResponse.from_orm(field)
+                return FieldResponse.model_validate(field)
             return None
         except Exception as e:
             logger.error(f'更新字段失败: {str(e)}')
@@ -124,12 +124,12 @@ class FieldService:
     async def get_fields_by_category(self, category: str) -> List[FieldResponse]:
         """根据分类获取字段"""
         fields = await self.field_dao.get_fields_by_category(category)
-        return [FieldResponse.from_orm(field) for field in fields]
+        return [FieldResponse.model_validate(field) for field in fields]
 
     async def get_active_fields(self) -> List[FieldResponse]:
         """获取所有激活的字段"""
         fields = await self.field_dao.get_active_fields()
-        return [FieldResponse.from_orm(field) for field in fields]
+        return [FieldResponse.model_validate(field) for field in fields]
 
     async def get_role_field_permissions(self, role_id: int) -> List[FieldPermission]:
         """获取角色的字段权限"""
