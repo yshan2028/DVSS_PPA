@@ -29,15 +29,21 @@ logger = LogUtil.get_logger(__name__)
 
 
 async def init_database():
-    """异步初始化数据库表结构"""
+    """异步初始化数据库表结构
+    
+    注意：
+    - SQLAlchemy只负责创建表结构
+    - 演示数据由Docker Compose的MySQL初始化脚本插入
+    - 避免Python和SQL重复维护数据
+    """
     try:
-        # 异步创建数据库表结构（数据初始化由SQL脚本完成）
+        # 异步创建数据库表结构（不插入数据）
         await init_create_table()
         logger.info('✅ 数据库表结构已就绪')
-        logger.info('📋 演示数据初始化由MySQL初始化脚本完成')
+        logger.info('📋 演示数据由 /scripts/init-mysql.sql 初始化')
         
     except Exception as exc:
-        logger.exception('❌ 数据库初始化失败', exc_info=exc)
+        logger.exception('❌ 数据库表结构初始化失败', exc_info=exc)
         raise
 
 

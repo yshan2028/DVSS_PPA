@@ -1,12 +1,11 @@
 -- DVSS MySQL 数据库初始化脚本
--- 说明：此脚本只负责插入初始数据，表结构由SQLAlchemy ORM自动创建
+-- 说明：表结构由SQLAlchemy ORM自动创建，此脚本仅负责插入演示数据
 
 -- 设置字符集
 SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
 
--- 使用数据库
-USE dvss_db;
+-- 等待SQLAlchemy创建表结构后，插入演示数据
 
 -- 插入演示角色
 INSERT IGNORE INTO roles (name, description, is_active) VALUES
@@ -156,5 +155,11 @@ INSERT IGNORE INTO original_orders (
     2898.00, 289.80, 60.00, 0.00, 0.78, 'pending'
 );
 
--- 初始化完成
--- 数据库初始化脚本执行完毕
+-- 演示数据插入完成
+SELECT 'DVSS演示数据初始化完成！' AS message;
+SELECT 'Admin账号: admin/123456' AS admin_info;
+SELECT 'Seller账号: seller/123456' AS seller_info;
+SELECT 'Payment账号: payment/123456' AS payment_info;
+SELECT 'Logistics账号: logistics/123456' AS logistics_info;
+SELECT 'Auditor账号: auditor/123456' AS auditor_info;
+SELECT 'Platform账号: platform/123456' AS platform_info;
